@@ -1,0 +1,39 @@
+features:
+  default:
+    system_prompt: "You are a helpful assistant."
+    user_prompt_template: "{text}"
+  summarization:
+    system_prompt: "You are a helpful text assistant dedicated to providing accurate, respectful, and thoughtful assistance. Avoid harmful, unethical, prejudiced, or negative content. Ensure replies promote fairness and positivity."
+    user_prompt_template: '''Summarize the following text using precise and concise language. Use headers and bulleted lists in the summary. Maintain the meaning and factual accuracy. # Article:  {text}'''
+
+vendors:
+  openai:
+    api_key_env: OPENAI_API_KEY
+    api_base: null
+    model_config:
+      gpt-4:
+        tokenizer_type: "tiktoken"
+      gpt-3.5-turbo:
+        tokenizer_type: "tiktoken"
+
+  together-ai:
+    api_key_env: TOGETHER_AI_API_KEY
+    api_base: https://api.together.xyz/v1
+    model_config:
+      "meta-llama/Meta-Llama-3.1-8B-Instruct":
+        tokenizer_type: "huggingface"
+        tokenizer: "baseten/Meta-Llama-3-tokenizer"
+      "meta-llama/Meta-Llama-3.1-70B-Instruct":
+        tokenizer_type: "huggingface"
+        tokenizer: "baseten/Meta-Llama-3-tokenizer"
+
+  groq:
+    api_key_env: GROQ_API_KEY
+    api_base: "https://api.groq.com/openai/v1"
+    model_config:
+      "llama-3.1-8b-instant":
+        tokenizer_type: "huggingface"
+        tokenizer: "baseten/Meta-Llama-3-tokenizer"
+      "llama-3.3-70b-versatile":
+        tokenizer_type: "huggingface"
+        tokenizer: "baseten/Meta-Llama-3-tokenizer"
