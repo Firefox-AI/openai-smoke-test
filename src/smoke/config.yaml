@@ -1,9 +1,9 @@
 features:
   default:
-    system_prompt: "You are a helpful assistant."
+    system_prompt_template: "You are a helpful assistant."
     user_prompt_template: "{text}"
   summarization:
-    system_prompt: "You are a helpful text assistant dedicated to providing accurate, respectful, and thoughtful assistance. Avoid harmful, unethical, prejudiced, or negative content. Ensure replies promote fairness and positivity."
+    system_prompt_template: "You are a helpful text assistant dedicated to providing accurate, respectful, and thoughtful assistance. Avoid harmful, unethical, prejudiced, or negative content. Ensure replies promote fairness and positivity."
     user_prompt_template: '''Summarize the following text using precise and concise language. Use headers and bulleted lists in the summary. Maintain the meaning and factual accuracy. # Article:  {text}'''
 
 vendors:
@@ -20,12 +20,12 @@ vendors:
     api_key_env: TOGETHER_AI_API_KEY
     api_base: https://api.together.xyz/v1
     model_config:
-      "meta-llama/Meta-Llama-3.1-8B-Instruct":
+      "moz/llama-3-1-8b-instruct-turbo":
         tokenizer_type: "huggingface"
-        tokenizer: "baseten/Meta-Llama-3-tokenizer"
-      "meta-llama/Meta-Llama-3.1-70B-Instruct":
+        tokenizer: "meta-llama/Llama-3.1-8B-Instruct"
+      "moz/llama-3-3-70b-instruct-turbo":
         tokenizer_type: "huggingface"
-        tokenizer: "baseten/Meta-Llama-3-tokenizer"
+        tokenizer: "meta-llama/Llama-3.3-70B-Instruct"
 
   groq:
     api_key_env: GROQ_API_KEY
@@ -33,7 +33,29 @@ vendors:
     model_config:
       "llama-3.1-8b-instant":
         tokenizer_type: "huggingface"
-        tokenizer: "baseten/Meta-Llama-3-tokenizer"
+        tokenizer: "meta-llama/Llama-3.1-8B-Instruct"
       "llama-3.3-70b-versatile":
         tokenizer_type: "huggingface"
-        tokenizer: "baseten/Meta-Llama-3-tokenizer"
+        tokenizer: "meta-llama/Llama-3.3-70B-Instruct"
+
+  flower-ai:
+    api_key_env: FLOWER_API_KEY
+    api_base: "https://api.flower.ai/v1"
+    model_config:
+      "meta/llama3.1-8b/instruct-int4":
+        tokenizer_type: "huggingface"
+        tokenizer: "clowman/Llama-3.1-8B-Instruct-GPTQ-Int4"
+      "meta/llama3.3-70b/instruct-int4'":
+        tokenizer_type: "huggingface"
+        tokenizer: "Satwik11/Llama-3.3-70B-Instruct-AutoRound-GPTQ-4bit"
+
+  ollama:
+    api_key_env: OLLAMA_API_KEY
+    api_base: "http://localhost:11434/v1"
+    model_config:
+      "TheBloke/Mistral-7B-Instruct-v0.2-AWQ":
+        uri: "http://localhost:8000/v1/chat/completions"
+        temperature: 0.0
+        max_tokens: 1000
+        tokenizer_type: "huggingface"
+        tokenizer: "mistralai/Mistral-7B-Instruct-v0.2"
