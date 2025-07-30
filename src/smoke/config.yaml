@@ -45,7 +45,7 @@ vendors:
       "meta/llama3.1-8b/instruct-int4":
         tokenizer_type: "huggingface"
         tokenizer: "clowman/Llama-3.1-8B-Instruct-GPTQ-Int4"
-      "meta/llama3.3-70b/instruct-int4'":
+      "meta/llama3.3-70b/instruct-int4":
         tokenizer_type: "huggingface"
         tokenizer: "Satwik11/Llama-3.3-70B-Instruct-AutoRound-GPTQ-4bit"
 
