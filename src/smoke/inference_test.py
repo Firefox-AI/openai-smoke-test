@@ -15,9 +15,10 @@ import numpy as np
 import openai
 import tiktoken
 import yaml
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from tabulate import tabulate
 from tqdm import tqdm
+import warnings
 
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
@@ -59,6 +60,7 @@ class ResultRecord(BaseModel):
         model_name: The name of the model being tested.
         messages: The list of messages sent to the model.
         success: A boolean indicating if the query was successful.
+        is_batch: A boolean indicating if the query was done in batch mode.
         temperature: The sampling temperature used for the query.
         max_tokens: The maximum number of tokens for the generation.
         system_prompt: The system prompt used.
@@ -83,6 +85,7 @@ class ResultRecord(BaseModel):
     model_name: str
     messages: List[Dict[str, str]]
     success: bool
+    is_batch: bool = False
     temperature: Optional[float] = None
     max_tokens: Optional[int] = None
     system_prompt: Optional[str] = None
@@ -101,6 +104,14 @@ class ResultRecord(BaseModel):
     tokens_per_second: Optional[float] = None
     total_tps: Optional[float] = None
     error: Optional[str] = None
+
+    @field_validator("generated_text", mode="before")
+    @classmethod
+    def warn_if_empty(cls, v):
+        if v is None or str(v).strip() == "":
+            warnings.warn("Warning: 'generated_text' is optional but empty or missing.")
+        return v
+
 
     def model_dump_json(self, **kwargs):
         """Dump the model to a JSON string, excluding None values."""
@@ -332,6 +343,7 @@ async def run_query(
         first_token_time = None
         generated_text = ""
         usage = None
+        is_batch = False
         stream = await openai_client.chat.completions.create(
             model=model_name,
             messages=messages,
@@ -351,6 +363,20 @@ async def run_query(
                     first_token_time = time.time()
                 content = chunk.choices[0].delta.content or ""
                 generated_text += content
+
+        if not generated_text:
+            is_batch = True
+            completion = await openai_client.chat.completions.create(
+                    model=model_name,
+                    messages=messages,
+                    stream=False,
+                    max_tokens=max_tokens,
+                    temperature=temperature,
+                )
+            if completion.choices:
+                generated_text = completion.choices[0].message.content
+            if completion.usage:
+                usage = completion.usage
 
         end_time = time.time()
         total_time = end_time - start_time
@@ -445,6 +471,7 @@ async def run_query(
                 tokens_per_second=tps,
                 total_tps=total_tps,
                 success=True,
+                is_batch=is_batch,
             )
             output_builder.record(record)
 
@@ -464,6 +491,7 @@ async def run_query(
                 messages=messages,
                 success=False,
                 error=str(e),
+                is_batch=is_batch,
             )
             output_builder.record(record)
 

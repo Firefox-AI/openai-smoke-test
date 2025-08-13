@@ -1,0 +1,65 @@
+# --- Prompt Variables ---
+# Define any variables you want to substitute into your message templates.
+prompt_variables:
+  user_query: "pizza restaurants I looked at last week"
+  user_location: "San Mateo"
+  user_diet: "gluten free"
+
+# --- Test Settings ---
+max_tokens: 2000
+temperature: 0.1
+
+# --- Message Templates ---
+# Define the conversation structure. Use {variable_name} for templates.
+messages:
+  - role: "system"
+    content: |
+      You are a personal browser assistant.
+      You only have access to open tabs, user memories, structured preferences, and 3 retrieved history entries most relevant to the user's query.
+      Do not hallucinate results — only act based on the provided data.
+  - role: "user"
+    content: |
+      --- User Query ---
+      "{user_query}"
+
+      --- Available User Actions ---
+      [{"name": "close_tab", "args": ["url"]}, {"name": "highlight_tab", "args": ["title"]}, {"name": "open_tab", "args": ["url", "title"]}, {"name": "scroll_to_section", "args": ["title", "heading"]}]
+
+      --- Context: User Memories ---
+      ["Prefers gluten-free food", "Avoids Twitter during the workday"]
+
+      --- Context: Open Tabs (URLs and Titles) ---
+      [{"url": "https://twitter.com", "title": "Twitter"}, {"url": "https://luigisitalian.com", "title": "Luigi’s Italian Restaurant"}]
+
+      --- User Preferences ---
+      {"location": "{user_location}", "dietary": "{user_diet}"}
+
+      --- Retrieved History (Top 3 Matches) ---
+      [{"url": "https://luigisitalian.com", "title": "Luigi’s Italian Restaurant", "text": "Menu, reviews, gluten-free pizza options in San Mateo."}, {"url": "https://reddit.com/r/pizza", "title": "Best Pizza Toppings Poll", "text": "What do you prefer on your pizza? Top answers from Redditors."}, {"url": "https://quantum-journal.org/papers/q-2025-08-10-999/", "title": "Quantum Entanglement and Noise", "text": "Research paper exploring fault-tolerant quantum computation."}]
+
+      Now do the following:
+      1. Identify the user's **intent**: one of ["search", "navigate", "interact", "history"]
+      2. Decide which browser actions to run
+      3. Suggest 2–3 natural next steps the user might want to take
+
+      Respond in **strict JSON** with this structure:
+      {
+        "intent": "<intent>",
+        "actions": [{"function": "<action_name>", "arguments": { "<key>": "<value>" }}],
+        "suggestions": ["<next step 1>", "<next step 2>"]
+      }
+      Only use the actions listed above. If no action is needed, leave "actions" empty.
+
+# --- Models to Test ---
+tests:
+  - vendor: "together-ai"
+    models:
+      - "openai/gpt-oss-120B"
+      # - "Qwen/Qwen3-235B-A22B-fp8-tput"
+      # - "zai-org/GLM-4.5-Air-FP8"
+      - "deepseek-ai/DeepSeek-R1"
+  - vendor: "groq"
+    models:
+      - "openai/gpt-oss-20b"
+      - "qwen/qwen3-32b"
+      - "deepseek-r1-distill-llama-70b"
