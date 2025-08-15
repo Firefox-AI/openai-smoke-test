@@ -3,8 +3,40 @@ features:
     system_prompt_template: "You are a helpful assistant."
     user_prompt_template: "{text}"
   summarization:
-    system_prompt_template: "You are a helpful text assistant dedicated to providing accurate, respectful, and thoughtful assistance. Avoid harmful, unethical, prejudiced, or negative content. Ensure replies promote fairness and positivity."
-    user_prompt_template: '''Summarize the following text using precise and concise language. Use headers and bulleted lists in the summary. Maintain the meaning and factual accuracy. # Article:  {text}'''
+    use_dataset: true # Use dataset instead of lorem ipsum, setting this true also runs summarization scoring
+    log_stats: false # Setting to true iterates through entire dataset and logs stats in stats.jsonl
+    dataset_name: "page-summarization-eval" # (prefixed with Mozilla/) loaded from https://huggingface.co/Mozilla/datasets
+    system_prompt_template: "You are an expert at creating mobile-optimized summaries. Process: Step 1: Identify the type of content. Step 2: Based on content type, prioritize: Recipe - Servings, Total time, Ingredients list, Key steps, Tips. News - What happened, when, where. How-to - Total time, Materials, Key steps, Warnings. Review - Bottom line rating, price. Opinion - Main arguments, Key evidence. Personal Blog - Author, main points. Fiction - Author, summary of plot. All other content types - Provide a brief summary of no more than 6 sentences. Step 3: Format for mobile using concise language and paragraphs with 3 sentences maximum. Bold critical details (numbers, warnings, key terms)."
+    user_prompt_template: '''Summarize the following article in a single, dense paragraph. Do not use any markdown, headings, bullet points, or numbered lists. The summary should be presented as a single block of text. Article: {text}'''
+    temperature: 0.1
+    top_p: 0.01
+    metric_threshold:
+      ttft: 1 # must be lower (all others are: must be higher)
+      per_query_tps: 100
+      round_trip: 2.5 # must be lower
+    score_threshold:
+      rouge:
+        rouge1: .3
+        rouge2: .2
+        rougeLsum: .25
+      bleu: .1
+      unieval:
+        consistency: .9
+        coherence: .8
+        fluency: .8
+        relevance: .75
+        overall: .85
+      percentage_of_hiccups: .05 # must be lower
+      overall: .65
+    stream: true # Stream chat completion and track ttft
+    service_account_file: "creds.json" # service account credentials for gcloud auth mistral ai
+    llm_unieval_scoring: # Replace unieval with equivalent scoring using LLM
+      score_with_llm: false
+      model_name: "gpt-4o"
+      base_url: "https://api.openai.com/v1/"
+      api_key: LLM_UNIEVAL_SCORING_API_KEY
+      system_prompt: "You are a meticulous and impartial AI expert specializing in the evaluation of text summaries. Your analysis must be objective and based solely on the provided texts. You will score the summary on five specific criteria, providing your final output as a single, clean JSON object and nothing else."
+      user_prompt: 'Carefully evaluate the "PREDICTION SUMMARY" against the "ORIGINAL CONTENT". Use the "REFERENCE SUMMARY" as a gold standard for what a high-quality summary should contain.\n\n### EVALUATION CRITERIA\nYou must rate the summary on a scale of 0.0 to 1.0 for each of the following five criteria:\n1.  **Consistency**: How factually accurate is the summary compared to the ORIGINAL CONTENT? (1.0 = fully consistent, 0.0 = completely contradictory)\n2.  **Coherence**: How well-structured and easy to understand is the summary? Does it flow logically? (1.0 = perfectly coherent, 0.0 = nonsensical)\n3.  **Fluency**: How well-written is the summary in terms of grammar, spelling, and style? (1.0 = flawless, 0.0 = ungrammatical)\n4.  **Relevance**: How well does the summary capture the main points of the ORIGINAL CONTENT, as guided by the REFERENCE SUMMARY? (1.0 = captures all key points, 0.0 = completely irrelevant)\n5.  **Overall**: Your holistic score reflecting the summarys overall quality and usefulness.\n\n### INPUT TEXTS\n**--- ORIGINAL CONTENT ---**\n{original_content}\n**--- REFERENCE SUMMARY ---**\n{reference}\n**--- PREDICTION SUMMARY ---**\n{prediction}\n\n### REQUIRED OUTPUT FORMAT\nProvide your evaluation as a single JSON object. Do not include any text before or after the JSON.\n\nExample:\n{\n  "consistency": 0.9,\n  "coherence": 1.0,\n  "fluency": 1.0,\n  "relevance": 0.8,\n  "overall": 0.9\n}'
 
 vendors:
   openai:

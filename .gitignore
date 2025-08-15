@@ -1,0 +1,8 @@
+creds.json
+.idea/
+**/*.txt
+**/*/__pycache__/
+**/*.env
+**/*.jsonl
+**/*.DS_Store
+src/openai_smoke_test.egg-info
