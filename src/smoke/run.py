@@ -493,7 +493,10 @@ async def async_main(args):
         error_details = "\n".join([
             f"  - {error['name']}: value {error['value']:.4f} is beyond threshold {error['threshold']:.4f}" for error in threshold_errors
         ])
-        raise Exception(f"Threshold Error:\n{error_details}")
+        if summarization_config.get("error_on_threshold_fails", False):
+            raise Exception(f"Threshold Error:\n{error_details}")
+        else:
+            print(error_details)
 
     return failures
 

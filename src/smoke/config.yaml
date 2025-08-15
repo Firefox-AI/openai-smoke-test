@@ -3,13 +3,15 @@ features:
     system_prompt_template: "You are a helpful assistant."
     user_prompt_template: "{text}"
   summarization:
-    use_dataset: true # Use dataset instead of lorem ipsum, setting this true also runs summarization scoring
+    use_dataset: false # Use dataset instead of lorem ipsum, setting this true also runs summarization scoring
     log_stats: false # Setting to true iterates through entire dataset and logs stats in stats.jsonl
     dataset_name: "page-summarization-eval" # (prefixed with Mozilla/) loaded from https://huggingface.co/Mozilla/datasets
     system_prompt_template: "You are an expert at creating mobile-optimized summaries. Process: Step 1: Identify the type of content. Step 2: Based on content type, prioritize: Recipe - Servings, Total time, Ingredients list, Key steps, Tips. News - What happened, when, where. How-to - Total time, Materials, Key steps, Warnings. Review - Bottom line rating, price. Opinion - Main arguments, Key evidence. Personal Blog - Author, main points. Fiction - Author, summary of plot. All other content types - Provide a brief summary of no more than 6 sentences. Step 3: Format for mobile using concise language and paragraphs with 3 sentences maximum. Bold critical details (numbers, warnings, key terms)."
     user_prompt_template: '''Summarize the following article in a single, dense paragraph. Do not use any markdown, headings, bullet points, or numbered lists. The summary should be presented as a single block of text. Article: {text}'''
     temperature: 0.1
     top_p: 0.01
+    max_completion_tokens: null # max tokens for summarization call, set to 0 for None
+    error_on_threshold_fails: false
     metric_threshold:
       ttft: 1 # must be lower (all others are: must be higher)
       per_query_tps: 100

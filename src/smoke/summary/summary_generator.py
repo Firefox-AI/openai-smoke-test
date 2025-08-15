@@ -53,7 +53,7 @@ class SummaryGenerator:
                     temperature=self.config.get("temperature", 0.1),
                     top_p=self.config.get("top_p", 0.01),
                     stream=True,
-                    max_tokens=None if ref_summary else 200,
+                    max_completion_tokens=self.config.get("max_completion_tokens"),
                 )
 
                 summary = ""
@@ -74,8 +74,8 @@ class SummaryGenerator:
                         {"role": "user", "content": user_prompt},
                     ],
                     stream=False,
-                    # Set max_tokens to None if a ref_summary exists, otherwise 200
-                    max_tokens=None if ref_summary else 200,
+                    # Set max_completion_tokens to None if a ref_summary exists, otherwise 200
+                    max_completion_tokens=self.config.get("max_completion_tokens"),
                 )
                 # return response.choices[0].message.content
                 summary = response.choices[0].message.content

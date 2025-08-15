@@ -103,13 +103,15 @@ This table details the configuration options for the summarization and evaluatio
 | Parameter | Type | Description | Default Value |
 | :--- | :--- | :--- | :--- |
 | **Summarization** | | | |
-| `use_dataset` | `bool` | If true, uses the Hugging Face dataset defined at `dataset_name`. Otherwise the smoke test is ran on randomly generated lorem ipsum. | `true` |
+| `use_dataset` | `bool` | If true, uses the Hugging Face dataset defined at `dataset_name`. Otherwise the smoke test is ran on randomly generated lorem ipsum. | `false` |
 | `log_stats` | `bool` | If true, iterates through the entire dataset and logs scores to `stats.jsonl`. If false, be sure to pass `--queries-per-user` argument | `false` |
 | `dataset_name` | `str` | Hugging Face dataset to load from the Mozilla organization. | `"page-summarization-eval"` |
 | `system_prompt_template` | `str` | The system prompt that instructs the model on how to summarize. | `"You are an expert..."` |
 | `user_prompt_template` | `str` | The user prompt containing the `{text}` placeholder for the article. | `"Summarize the following..."` |
 | `temperature` | `float` | Controls the randomness of the model's output. Lower is more deterministic. | `0.1` |
 | `top_p` | `float` | Controls nucleus sampling for the model's output. | `0.01` |
+| `max_completion_tokens` | `int or null` | Max completion tokens for summarization. | `null` |
+| `error_on_threshold_fails` | `bool` | If true, throws an error if any threshold check fails | `false` |
 | `stream` | `bool` | If true, streams the response to track Time To First Token (TTFT). | `true` |
 | `service_account_file` | `str` | Path to the Google Cloud service account file for Mistral authentication. | `"creds.json"` |
 | **Performance Thresholds** | | | |
