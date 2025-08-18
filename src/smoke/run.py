@@ -89,7 +89,7 @@ async def run_query(
     try:
         start_time = time.time()
 
-        summary, first_token_time = await summary_generator.generate(model_name, text, ref_summary, stop_event)
+        summary, first_token_time = await summary_generator.generate(model_name, text, stop_event)
         if summary == "":
             # 401 or 429
             stop_event.set()

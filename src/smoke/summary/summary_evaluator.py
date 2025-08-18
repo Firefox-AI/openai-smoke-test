@@ -52,15 +52,17 @@ class SummaryEvaluator:
         )).model_dump()
 
     """Evaluates text that may contain duplicate or hallucinated characters/words
+    Score is from 0 to 1 -> 1 being 100% certain there's no hiccup
 
     Args:
         text: text to be evaluated
+        threshold_ratio: ratio of words that can be repeated before being considered a hiccup
+        is_hiccup_threshold: threshold below which a hiccup is detected
 
     Returns:
-        bool: score is from 0 to 1 - 1 being 100% certain there's no hiccup (return 0)
-        if score is below the is_hiccup_threshold, (return 1)
+        bool: score is below the is_hiccup_threshold
     """
-    def contains_hiccup(self, text: str, threshold_ratio: float = 0.1, is_hiccup_threshold: float = 0.5) -> int:
+    def contains_hiccup(self, text: str, threshold_ratio: float = 0.1, is_hiccup_threshold: float = 0.5) -> bool:
         score = 1
 
         base_word_penalty = 0.05
@@ -113,13 +115,13 @@ class SummaryEvaluator:
             previous_word = normalized_word
 
         if min(1, score) < is_hiccup_threshold:
-            return 1
-        return 0
+            return True
+        return False
 
     async def score(self, predictions: str, reference_summary: str, text: str, score_with_llm: bool):
         return {
             "rouge": self.rouge.compute(predictions=[predictions], references=[reference_summary]),
             "bleu": self.bleu.compute(predictions=[predictions], references=[reference_summary]),
             "unieval": (await self.score_summary_with_model(predictions, reference_summary, text)) if score_with_llm else self.compute_unieval(predictions, reference_summary, text)[0],
-            "hiccup": self.contains_hiccup(predictions),
+            "hiccup": 1 if self.contains_hiccup(predictions) else 0,
         }

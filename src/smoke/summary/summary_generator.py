@@ -14,13 +14,12 @@ class SummaryGenerator:
         self.mistral_client = MistralClient(summarization_config)
         self.config = summarization_config
 
-    async def generate(self, model_name: str, text: str, ref_summary: str, stop_event: asyncio.Event) -> tuple[str, float]:
+    async def generate(self, model_name: str, text: str, stop_event: asyncio.Event) -> tuple[str, float]:
         """
         Generates a summary using the specified model.
 
         :param model_name: The name of the model to use (e.g., "mistral-7b", "gpt-4").
         :param text: The text to summarize.
-        :param ref_summary: An optional reference summary to adjust token count.
         :param stop_event: An initialized StopEvent object.
         :return: The generated summary as a string.
         """
@@ -74,9 +73,7 @@ class SummaryGenerator:
                         {"role": "user", "content": user_prompt},
                     ],
                     stream=False,
-                    # Set max_completion_tokens to None if a ref_summary exists, otherwise 200
                     max_completion_tokens=self.config.get("max_completion_tokens"),
                 )
-                # return response.choices[0].message.content
                 summary = response.choices[0].message.content
         return summary, first_token_time

@@ -138,7 +138,7 @@ This table details the configuration options for the summarization and evaluatio
 | `score_threshold.overall` | `float` | Minimum required final weighted score to pass the test. | `0.65` |
 | **LLM-based Evaluation** | | | |
 | `llm_unieval_scoring.score_with_llm`| `bool` | If true, uses an LLM to evaluate summaries instead of unieval library (not async). | `false` |
-| `llm_unieval_scoring.model_name`| `str` | The model name to use for LLM-based evaluation (e.g., GPT-4o). | `"gpt-4o"` |
+| `llm_unieval_scoring.model_name`| `str` | The model name to use for LLM-based evaluation. | `"gpt-4o"` |
 | `llm_unieval_scoring.base_url` | `str` | The API endpoint for the evaluator LLM. | `"https://api.openai.com/v1/"` |
 | `llm_unieval_scoring.api_key` | `str` | The name of the environment variable holding the evaluator's API key. | `LLM_UNIEVAL_SCORING_API_KEY` |
 | `llm_unieval_scoring.system_prompt`| `str` | The system prompt for the evaluator model. | `"You are a meticulous..."` |
