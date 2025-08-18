@@ -15,9 +15,10 @@ import numpy as np
 import openai
 import tiktoken
 import yaml
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from tabulate import tabulate
 from tqdm import tqdm
+import warnings
 
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
@@ -45,8 +46,8 @@ class ModelConfig(BaseModel):
 
     tokenizer_type: str = "tiktoken"
     tokenizer: Optional[str] = None
-    n_ctx: int = 8192
-    max_tokens: int = 1024
+    n_ctx: Optional[int] = None
+    max_tokens: Optional[int] = None
     truncate: bool = False
     temperature: float = 0.0
 
@@ -59,6 +60,7 @@ class ResultRecord(BaseModel):
         model_name: The name of the model being tested.
         messages: The list of messages sent to the model.
         success: A boolean indicating if the query was successful.
+        is_batch: A boolean indicating if the query was done in batch mode.
         temperature: The sampling temperature used for the query.
         max_tokens: The maximum number of tokens for the generation.
         system_prompt: The system prompt used.
@@ -83,6 +85,7 @@ class ResultRecord(BaseModel):
     model_name: str
     messages: List[Dict[str, str]]
     success: bool
+    is_batch: bool = False
     temperature: Optional[float] = None
     max_tokens: Optional[int] = None
     system_prompt: Optional[str] = None
@@ -101,6 +104,14 @@ class ResultRecord(BaseModel):
     tokens_per_second: Optional[float] = None
     total_tps: Optional[float] = None
     error: Optional[str] = None
+
+    @field_validator("generated_text", mode="before")
+    @classmethod
+    def warn_if_empty(cls, v):
+        if v is None or str(v).strip() == "":
+            warnings.warn("Warning: 'generated_text' is optional but empty or missing.")
+        return v
+
 
     def model_dump_json(self, **kwargs):
         """Dump the model to a JSON string, excluding None values."""
@@ -247,36 +258,46 @@ def setup_tokenizer(
 
 
 def truncate_context(
-    context: str,
+    user_content: str,
     tokenizer: Union[PreTrainedTokenizer, PreTrainedTokenizerFast, Any],
     model_config: ModelConfig,
     system_prompt: str,
-    user_prompt_template: str,
+    max_tokens: int,
 ) -> str:
-    """Truncate the context to fit within the model's context window.
+    """Truncate the user_content to fit within the model's context window.
 
     Args:
-        context: The input context to truncate.
+        user_content: The user content to truncate.
         tokenizer: The tokenizer to use for encoding.
         model_config: The model's configuration.
         system_prompt: The system prompt.
-        user_prompt_template: The user prompt template.
+        max_tokens: The maximum number of tokens for the generation.
 
     Returns:
         The truncated context.
     """
-    n_ctx = model_config.n_ctx
-    max_tokens = model_config.max_tokens
+    if model_config.truncate and max_tokens is None:
+        raise ValueError(
+            "Cannot truncate context: truncate=True but max_tokens not provided. "
+            "Please set max_tokens in model config or disable truncate."
+        )
+
+    if not model_config.truncate:
+        return user_content
+
     system_tokens_length = len(tokenizer.encode(system_prompt))
-    prompt_frame = user_prompt_template.replace("{text}", "")
-    user_prompt_tokens_length = len(tokenizer.encode(prompt_frame))
-    available = n_ctx - (
-        system_tokens_length + user_prompt_tokens_length + max_tokens + 50
-    )
-    encoded_context = tokenizer.encode(context)
+    available = max_tokens - (system_tokens_length + 50)
+
+    if model_config.n_ctx:
+        available = min(
+            available, model_config.n_ctx - (system_tokens_length + max_tokens + 50)
+        )
+
+    encoded_context = tokenizer.encode(user_content)
     if len(encoded_context) > available:
-        context = tokenizer.decode(encoded_context[:available])
-    return context
+        user_content = tokenizer.decode(encoded_context[:available])
+
+    return user_content
 
 
 async def run_query(
@@ -319,7 +340,11 @@ async def run_query(
 
     if model_config.truncate:
         user_content = truncate_context(
-            user_content, tokenizer, model_config, system_prompt, user_prompt_template
+            user_content,
+            tokenizer,
+            model_config,
+            system_prompt,
+            max_tokens,
         )
 
     messages = [
@@ -332,6 +357,7 @@ async def run_query(
         first_token_time = None
         generated_text = ""
         usage = None
+        is_batch = False
         stream = await openai_client.chat.completions.create(
             model=model_name,
             messages=messages,
@@ -351,6 +377,20 @@ async def run_query(
                     first_token_time = time.time()
                 content = chunk.choices[0].delta.content or ""
                 generated_text += content
+
+        if not generated_text:
+            is_batch = True
+            completion = await openai_client.chat.completions.create(
+                    model=model_name,
+                    messages=messages,
+                    stream=False,
+                    max_tokens=max_tokens,
+                    temperature=temperature,
+                )
+            if completion.choices:
+                generated_text = completion.choices[0].message.content
+            if completion.usage:
+                usage = completion.usage
 
         end_time = time.time()
         total_time = end_time - start_time
@@ -445,6 +485,7 @@ async def run_query(
                 tokens_per_second=tps,
                 total_tps=total_tps,
                 success=True,
+                is_batch=is_batch,
             )
             output_builder.record(record)
 
@@ -464,6 +505,7 @@ async def run_query(
                 messages=messages,
                 success=False,
                 error=str(e),
+                is_batch=is_batch,
             )
             output_builder.record(record)
 

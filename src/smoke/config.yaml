@@ -45,21 +45,44 @@ vendors:
     api_key_env: OPENAI_API_KEY
     api_base: null
     model_config:
-      gpt-4:
+      gpt-4o:
         tokenizer_type: "tiktoken"
-      gpt-3.5-turbo:
+      o4-mini:
+        tokenizer_type: "tiktoken"
+      gpt-4.1:
+        tokenizer_type: "tiktoken"
+      gpt-5-mini:
+        tokenizer_type: "tiktoken"
+      gpt-5-nano:
+        tokenizer_type: "tiktoken"
+      gpt-5:
         tokenizer_type: "tiktoken"
 
   together-ai:
     api_key_env: TOGETHER_AI_API_KEY
     api_base: https://api.together.xyz/v1
     model_config:
-      "moz/llama-3-1-8b-instruct-turbo":
+      "meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo":
         tokenizer_type: "huggingface"
         tokenizer: "meta-llama/Llama-3.1-8B-Instruct"
-      "moz/llama-3-3-70b-instruct-turbo":
+      "meta-llama/Llama-3.3-70B-Instruct-Turbo":
         tokenizer_type: "huggingface"
         tokenizer: "meta-llama/Llama-3.3-70B-Instruct"
+      "openai/gpt-oss-120B":
+        tokenizer_type: "huggingface"
+        tokenizer: "openai/gpt-oss-120b"
+      "Qwen/Qwen3-235B-A22B-fp8-tput":
+        tokenizer_type: "huggingface"
+        tokenizer: "Qwen/Qwen3-235B-A22B-FP8"
+      "Qwen/Qwen3-235B-A22B-Instruct-2507-tput": #built-in no-thinking model
+        tokenizer_type: "huggingface"
+        tokenizer: "Qwen/Qwen3-235B-A22B-Instruct-2507-FP8"
+      "zai-org/GLM-4.5-Air-FP8":
+        tokenizer_type: "huggingface"
+        tokenizer: "zai-org/GLM-4.5-Air-FP8"
+      "deepseek-ai/DeepSeek-R1":
+        tokenizer_type: "huggingface"
+        tokenizer: "deepseek-ai/DeepSeek-R1"
 
   groq:
     api_key_env: GROQ_API_KEY
@@ -71,6 +94,18 @@ vendors:
       "llama-3.3-70b-versatile":
         tokenizer_type: "huggingface"
         tokenizer: "meta-llama/Llama-3.3-70B-Instruct"
+      "openai/gpt-oss-120b":
+        tokenizer_type: "huggingface"
+        tokenizer: "openai/gpt-oss-120b"
+      "openai/gpt-oss-20b":
+        tokenizer_type: "huggingface"
+        tokenizer: "openai/gpt-oss-20b"
+      "qwen/qwen3-32b":
+        tokenizer_type: "huggingface"
+        tokenizer: "Qwen/Qwen3-32B"
+      "deepseek-r1-distill-llama-70b":
+        tokenizer_type: "huggingface"
+        tokenizer: "deepseek-ai/DeepSeek-R1-Distill-Llama-70B"
 
   flower-ai:
     api_key_env: FLOWER_API_KEY
@@ -82,6 +117,16 @@ vendors:
       "meta/llama3.3-70b/instruct-int4":
         tokenizer_type: "huggingface"
         tokenizer: "Satwik11/Llama-3.3-70B-Instruct-AutoRound-GPTQ-4bit"
+        truncate: true
+        max_tokens: 1500
+
+  cerebras:
+    api_key_env: CEREBRAS_API_KEY
+    api_base: "https://api.cerebras.ai/v1"
+    model_config:
+      "gpt-oss-120b":
+        tokenizer_type: "huggingface"
+        tokenizer: "openai/gpt-oss-120b"
 
   ollama:
     api_key_env: OLLAMA_API_KEY
@@ -93,3 +138,19 @@ vendors:
         max_tokens: 1000
         tokenizer_type: "huggingface"
         tokenizer: "mistralai/Mistral-7B-Instruct-v0.2"
+      "Qwen/Qwen3-0.6B-GGUF":
+        temperature: 0.0
+        max_tokens: 1000
+        truncate: true
+        tokenizer_type: "huggingface"
+        tokenizer: "Qwen/Qwen3-0.6B"
+      "google/gemma-3-1b-it-qat-q4_0-gguf":
+        temperature: 0.0
+        max_tokens: 1000
+        tokenizer_type: "huggingface"
+        tokenizer: "google/gemma-3-1b-it"
+      "Qwen/Qwen3-4B-Thinking-2507":
+        temperature: 0.0
+        max_tokens: 1000
+        tokenizer_type: "huggingface"
+        tokenizer: "Qwen/Qwen3-4B-Thinking-2507"

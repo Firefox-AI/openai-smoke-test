@@ -43,6 +43,13 @@ Failed Queries: 0
 Successful
 ```
 
+## Usage for Quick Test script
+
+```
+python src/smoke/quick_test.py
+python src/smoke/quick_test.py --config PATH-TO-custom-quick_test_multiturn_config.yaml
+```
+
 # Summarization Scoring
 Below is with added summarization scores, running 5 queries simulatenously:
 
@@ -51,7 +58,6 @@ openai-smoke-test % openai-smoketest --model mistral-small-2503 --num-users 5
 Running queries:   0%|                                        | 0/50 [00:00<?, ?it/s]Refreshing Mistral access token from service account...
 Token refreshed successfully.
 Running queries: 100%|███████████████████████████████| 50/50 [02:00<00:00,  2.41s/it]
-
 --- SUMMARY REPORT ---
 Total Queries: 50
 Successful Queries: 50
