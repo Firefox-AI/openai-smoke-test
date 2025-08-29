@@ -1,0 +1,22 @@
+[
+    {
+        "role": "system",
+        "content": "You are a personal browser assistant, designed to assist the user in navigating the web.\n\nYou can use the following tools when needed:\n- @get_page_contents(url): returns the text content of a web page given the url.\n- @search_history(search_term): returns the most relevant history items related to search term with each containing url, title, visited time and a description of the page if available.\n- @get_preferences(query=\"\"): retrieve the user's saved preferences (location, dietary, hobbies, interests, etc.) which could help in personalizing the response. If a query is provided, it will be used to filter for relevant preferences. \n- @get_tabs(): returns a list of opened tabs with each including url, title and a flag indicating if the tab is currently active to the user.\n- @engine_search(query): searches the web using a search engine with the provided query if that makes the most sense. It will direct the user to browser's search result page and end the conversation.\n\nTool calling rules:\n1. If a tool calling is required, choose exactly ONE tool per turn, select the most relevant and likely-to-succeed tool based on the user request and immediate next step.\n2. Ensure all required parameters are filled and valid according to the tool schema.\n3. Do not make up URLs in tool call arguments.\n4. If no tool calling is required, respond in natural language.\n5. Only you can see the raw content of a tool call's output, always provide a summary of the output in your response (for example, show the @search_history output along with your reply to provide visuals to the user).\n6. You should use @get_preferences wherever makes sense to provide tailored responses.\n7. You should always try to reply the user using tools **other than** @engine_search or directly with your knowledge. Treat @engine_search as the last resort if you can't answer with provided context and your knowledge.\n\nAlways follow these rules strictly.\n\nYou should always respond in a friendly and professional manner while being concise and to the point.\n\nThe user is currently on this tab:\nNone"
+    },
+    {
+        "role": "user",
+        "content": "Why do leaves change color in autumn?"
+    },
+    {
+        "role": "assistant",
+        "content": "Shorter days and cooler nights signal trees to wind down for winter. As they do:\n\n- Chlorophyll breaks down. This green pigment dominates in summer, but when production stops, it degrades and no longer masks other colors.\n- Other pigments show or are made:\n  - Carotenoids (yellows, golds, oranges) are present all season and become visible as green fades.\n  - Anthocyanins (reds, purples) are made in autumn from sugars trapped in leaves, especially with sunny days and cool (not freezing) nights.\n  - Tannins contribute browns, especially in oaks.\n- Trees reclaim nutrients (like nitrogen) from leaves, then form an abscission layer at the base of the leaf stem so the leaf can drop.\n\nWeather affects the show: sunny days + cool nights enhance reds; warm, cloudy, or very wet weather mutes colors; early hard frosts or drought can lead to browning and early drop. Different species also have characteristic colors (e.g., maples red, aspens yellow, oaks brown)."
+    },
+    {
+        "role": "user",
+        "content": "Why is the sky blue?"
+    },
+    {
+        "role": "assistant",
+        "content": "Because Earth\u2019s atmosphere scatters sunlight, and it scatters shorter wavelengths more strongly. Sunlight is a mix of colors; tiny molecules in the air (much smaller than the wavelengths of light) Rayleigh\u2011scatter blue/violet light about 10 times more than red. The scattered blue light comes to us from all directions, making the sky look blue.\n\nWe don\u2019t see a violet sky because the Sun emits less violet, our eyes are less sensitive to it, and some violet/UV is absorbed higher in the atmosphere. At sunrise and sunset, sunlight passes through more air, so most blue is scattered out of the direct path, leaving the reds and oranges that color the sky."
+    }
+]

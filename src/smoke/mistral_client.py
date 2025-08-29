@@ -7,6 +7,7 @@ import aiohttp
 import json
 import certifi
 import ssl
+from typing import List
 
 REQUIRED_SCOPES = ["https://www.googleapis.com/auth/cloud-platform"]
 
@@ -44,7 +45,7 @@ class MistralClient:
             print(f"Error refreshing token: {e}")
             raise
 
-    async def completion(self, model_name: str, system_prompt: str, prompt: str, temperature: float, top_p: float, stop_event: asyncio.Event):
+    async def completion(self, model_name: str, messages: List[dict], temperature: float, top_p: float, stop_event: asyncio.Event):
         REGION = "us-central1"
         PROJECT_ID = "fx-gen-ai-sandbox"
 
@@ -56,20 +57,7 @@ class MistralClient:
             "model": model_name,
             "top_p": top_p,
             "temperature": temperature,
-            "messages": [
-                {
-                    "role": "system",
-                    "content": [
-                        {"type": "text", "text": system_prompt}
-                    ]
-                },
-                {
-                    "role": "user",
-                    "content": [
-                        {"type": "text", "text": prompt}
-                    ]
-                }
-            ]
+            "messages": messages
         }
 
         headers = {

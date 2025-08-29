@@ -79,6 +79,7 @@ async def run_query(
     encoding,
     summarization_config,
     summary_evaluator: SummaryEvaluator,
+    stats_file: str,
     test_rate_limit=False,
     pbar=None,
     stop_event=None,
@@ -90,13 +91,13 @@ async def run_query(
         start_time = time.time()
 
         summary, first_token_time = await summary_generator.generate(model_name, text, stop_event)
+        end_time = time.time()
         if summary == "":
             # 401 or 429
             stop_event.set()
             return
         token_count = len(encoding.encode(summary))
 
-        end_time = time.time()
 
         # evaluate summary
         score = {}
@@ -110,7 +111,7 @@ async def run_query(
         if summarization_config.get("log_stats"):
             # write score to file with
             async with stat_file_lock:
-                async with aiofiles.open("src/smoke/stats.jsonl", mode='a') as f:
+                async with aiofiles.open(stats_file, mode='a') as f:
                     json_string = json.dumps({
                         "original_text": text,
                         "reference_summary": ref_summary,
@@ -188,6 +189,7 @@ async def user_session(
     encoding,
     summarization_config,
     summary_evaluator: SummaryEvaluator,
+    stats_file: str,
     test_rate_limit,
     pbar,
     stop_event,
@@ -227,6 +229,7 @@ async def user_session(
             encoding,
             summarization_config,
             summary_evaluator,
+            stats_file,
             test_rate_limit,
             pbar,
             stop_event,
@@ -247,6 +250,19 @@ def check_thresholds(threshold_errors, threshold_config, stats):
 
 
 async def async_main(args):
+    stats_file = f"src/smoke/stats/summary/{args.model}.jsonl"
+    # Ensure stats_file directory exists
+    stats_dir = os.path.dirname(stats_file)
+    if stats_dir and not os.path.exists(stats_dir):
+        os.makedirs(stats_dir, exist_ok=True)
+
+    try:
+        with open(stats_file, "r") as f:
+            pass
+    except FileNotFoundError:
+        with open(stats_file, "w") as f:
+            f.write("")
+
     stop_event = asyncio.Event()
 
     config = load_config()
@@ -261,8 +277,8 @@ async def async_main(args):
     if use_dataset:
         dataset = load_dataset(f"Mozilla/{dataset_name}")["train"]
         if log_stats:
-            # load from stats.jsonl and skip entries with the same original_text
-            with open("src/smoke/stats.jsonl", "r") as f:
+            # load from stats_file and skip entries with the same original_text
+            with open(stats_file, "r") as f:
                 stats = [json.loads(line)["original_text"] for line in f]
             dataset = [article for article in dataset if article["content"] not in stats]
             total_queries = len(dataset)
@@ -319,6 +335,7 @@ async def async_main(args):
                     encoding,
                     summarization_config,
                     summary_evaluator,
+                    stats_file,
                     args.test_rate_limit,
                     pbar,
                     stop_event,
@@ -527,7 +544,6 @@ def main():
         default=False,
         help="Test the rate limiter",
     )
-
     parser.add_argument(
         "--min-words", type=int, default=500, help="Minimum number of words per query"
     )
@@ -549,19 +565,18 @@ def main():
         default=None,
         help="Optional custom base URL for the OpenAI API endpoint",
     )
-
     parser.add_argument(
         "--single-run",
         action="store_true",
         help="Run a single test query with 100 words",
     )
+    parser.add_argument("--model", type=str, default="gpt-4o", help="OpenAI model name")
     parser.add_argument(
         "--debug",
         action="store_true",
         help="Show extra debugging information",
     )
 
-    parser.add_argument("--model", type=str, default="gpt-4o", help="OpenAI model name")
     args = parser.parse_args()
 
     # tests fastly rate limiter

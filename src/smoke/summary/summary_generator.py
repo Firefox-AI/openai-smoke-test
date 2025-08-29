@@ -1,9 +1,10 @@
 import time
 import asyncio
-from .mistral_client import MistralClient
+from ..mistral_client import MistralClient
+import openai
 
 class SummaryGenerator:
-    def __init__(self, openai_client, summarization_config):
+    def __init__(self, openai_client: openai.AsyncClient, summarization_config: dict):
         """
         Initializes the generator with API clients and configuration.
 
@@ -31,8 +32,20 @@ class SummaryGenerator:
             try:
                 summary, first_token_time = await self.mistral_client.completion(
                     model_name,
-                    system_prompt,
-                    user_prompt,
+                    [
+                        {
+                            "role": "system",
+                            "content": {
+                                "type": "text", "text": system_prompt
+                            }
+                        },
+                        {
+                            "role": "user",
+                            "content": {
+                                "type": "text", "text": user_prompt
+                            }
+                        }
+                    ],
                     self.config.get("temperature", 0.1),
                     self.config.get("top_p", 0.01),
                     stop_event,
@@ -61,9 +74,11 @@ class SummaryGenerator:
                         return summary, first_token_time
                     if not first_token_time:
                         first_token_time = time.time()
-                    content = chunk.choices[0].delta.content or ""
-                    if len(content) > 0:
+                    try:
+                        content = chunk.choices[0].delta.content
                         summary += content
+                    except (AttributeError, KeyError, IndexError):
+                        continue
             else:
                 # --- Call OpenAI-compatible API ---
                 response = await self.openai_client.chat.completions.create(

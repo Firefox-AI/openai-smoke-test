@@ -30,3 +30,4 @@ where = ["src"]
 
 [project.scripts]
 openai-smoketest = "smoke.run:main"
+multi-turn-chat-smoketest = "smoke.multi_turn_test:main"

@@ -125,7 +125,7 @@ This table details the configuration options for the summarization and evaluatio
 | :--- | :--- | :--- | :--- |
 | **Summarization** | | | |
 | `use_dataset` | `bool` | If true, uses the Hugging Face dataset defined at `dataset_name`. Otherwise the smoke test is ran on randomly generated lorem ipsum. | `false` |
-| `log_stats` | `bool` | If true, iterates through the entire dataset and logs scores to `stats.jsonl`. If false, be sure to pass `--queries-per-user` argument | `false` |
+| `log_stats` | `bool` | If true, iterates through the entire dataset and logs scores to `src/smoke/stats/summary/<model_name>.jsonl`. If false, be sure to pass `--queries-per-user` argument | `false` |
 | `dataset_name` | `str` | Hugging Face dataset to load from the Mozilla organization. | `"page-summarization-eval"` |
 | `system_prompt_template` | `str` | The system prompt that instructs the model on how to summarize. | `"You are an expert..."` |
 | `user_prompt_template` | `str` | The user prompt containing the `{text}` placeholder for the article. | `"Summarize the following..."` |
@@ -158,3 +158,17 @@ This table details the configuration options for the summarization and evaluatio
 | `llm_unieval_scoring.api_key` | `str` | The name of the environment variable holding the evaluator's API key. | `LLM_UNIEVAL_SCORING_API_KEY` |
 | `llm_unieval_scoring.system_prompt`| `str` | The system prompt for the evaluator model. | `"You are a meticulous..."` |
 | `llm_unieval_scoring.user_prompt`| `str` | The user prompt for the evaluator model, defining criteria and format. | `"Carefully evaluate the..."` |
+
+# Multi Turn Chat Testing
+
+Multi turn chat tests models with context, and simulates replying back to the same bot after its response. This command supports the `--start-with-context` to begin the conversation with a random context file defined in `/src/smoke/multi_turn_chat/data/initial-context/`
+
+A random query is chosen from `/src/smoke/multi_turn_chat/data/queries/generic_queries_2.csv`
+
+Example usage below
+
+```bash
+multi-turn-chat-smoketest --api-key "<api_key>"  --num-users 5 --queries-per-user 5 --start-with-context --model "Qwen/Qwen3-235B-A22B-Instruct-2507-tput" --api-base https://api.together.xyz/v1/
+```
+
+Logs are stored in `/src/smoke/stats/multi_turn/<model_name>.jsonl`
