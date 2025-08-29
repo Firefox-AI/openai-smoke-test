@@ -14,7 +14,7 @@ class EvaluationScores(BaseModel):
     overall: float = Field(..., description="A holistic score of the summary's quality (0.0-1.0).")
 
 class SummaryEvaluator:
-    def __init__(self, llm_scoring_config):
+    def __init__(self, llm_scoring_config: dict):
         self.rouge = evaluate.load("rouge")
         self.bleu = evaluate.load("bleu")
 
