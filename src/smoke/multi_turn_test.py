@@ -194,8 +194,7 @@ async def async_main(args):
     initial_context: List[List[dict]] = [[]]
     if args.start_with_context:
         initial_context = load_all_json_files_in_dir("src/smoke/multi_turn_chat/data/initial_context")
-    print(initial_context[1])
-    quit()
+    
     tasks = [
         asyncio.create_task(
             user_session(
