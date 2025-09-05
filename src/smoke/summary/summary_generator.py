@@ -1,10 +1,10 @@
 import time
 import asyncio
-from ..mistral_client import MistralClient
+from ..vertex_client import VertexClient
 import openai
 
 class SummaryGenerator:
-    def __init__(self, openai_client: openai.AsyncClient, summarization_config: dict):
+    def __init__(self, openai_client: openai.AsyncClient, summarization_config: dict, use_vertex: bool = False):
         """
         Initializes the generator with API clients and configuration.
 
@@ -12,7 +12,8 @@ class SummaryGenerator:
         :param summarization_config: A dict with prompts and settings.
         """
         self.openai_client = openai_client
-        self.mistral_client = MistralClient(summarization_config)
+        self.vertex_client = VertexClient(summarization_config)
+        self.use_vertex = use_vertex
         self.config = summarization_config
 
     async def generate(self, model_name: str, text: str, stop_event: asyncio.Event) -> tuple[str, float]:
@@ -28,30 +29,51 @@ class SummaryGenerator:
         user_prompt = self.config.get("user_prompt_template", "{text}").replace("{text}", text)
 
         first_token_time = None
-        if "mistral" in model_name.lower():
+        if self.use_vertex:
             try:
-                summary, first_token_time = await self.mistral_client.completion(
-                    model_name,
-                    [
+                summary, first_token_time = await self.vertex_client.vertex_completion(
+                    {
+                        "instances": [
                         {
-                            "role": "system",
-                            "content": {
-                                "type": "text", "text": system_prompt
-                            }
-                        },
-                        {
-                            "role": "user",
-                            "content": {
-                                "type": "text", "text": user_prompt
-                            }
+                            "text": f"""<|im_start|>system
+                            {system_prompt}
+                            <|im_end|>
+                            <|im_start|>user
+                            {user_prompt}
+                            <|im_end|>
+                            <|im_start|>assistant
+                            """
                         }
                     ],
-                    self.config.get("temperature", 0.1),
-                    self.config.get("top_p", 0.01),
-                    stop_event,
+                    "parameters": {
+                        "sampling_params": {
+                            "temperature": self.config.get("temperature", 0.1),
+                            "top_p": self.config.get("top_p", 0.01),
+                        }
+                    }}
                 )
+                # summary, first_token_time = await self.vertex_client.completion(
+                #     model_name,
+                #     [
+                #         {
+                #             "role": "system",
+                #             "content": {
+                #                 "type": "text", "text": system_prompt
+                #             }
+                #         },
+                #         {
+                #             "role": "user",
+                #             "content": {
+                #                 "type": "text", "text": user_prompt
+                #             }
+                #         }
+                #     ],
+                #     self.config.get("temperature", 0.1),
+                #     self.config.get("top_p", 0.01),
+                #     stop_event,
+                # )
             except Exception as e:
-                print(f"mistral_api error: {e}")
+                print(f"vertex_ai_api error: {e}")
                 summary = ""
         else:
             if self.config.get("stream"):
@@ -66,6 +88,7 @@ class SummaryGenerator:
                     top_p=self.config.get("top_p", 0.01),
                     stream=True,
                     max_completion_tokens=self.config.get("max_completion_tokens"),
+                    timeout=10,
                 )
 
                 summary = ""
@@ -76,7 +99,7 @@ class SummaryGenerator:
                         first_token_time = time.time()
                     try:
                         content = chunk.choices[0].delta.content
-                        summary += content
+                        summary += content if content else ""
                     except (AttributeError, KeyError, IndexError):
                         continue
             else:
@@ -89,6 +112,7 @@ class SummaryGenerator:
                     ],
                     stream=False,
                     max_completion_tokens=self.config.get("max_completion_tokens"),
+                    timeout=10,
                 )
                 summary = response.choices[0].message.content
         return summary, first_token_time
