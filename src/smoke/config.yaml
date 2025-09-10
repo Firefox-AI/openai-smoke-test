@@ -3,6 +3,7 @@ features:
     system_prompt_template: "You are a helpful assistant."
     user_prompt_template: "{text}"
   summarization:
+    evaluate: false # Evaluate summaries?
     use_dataset: false # Use dataset instead of lorem ipsum, setting this true also runs summarization scoring
     log_stats: false # Setting to true iterates through entire dataset and logs stats in stats.jsonl
     dataset_name: "page-summarization-eval" # (prefixed with Mozilla/) loaded from https://huggingface.co/Mozilla/datasets

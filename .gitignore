@@ -6,3 +6,5 @@ creds.json
 **/*.jsonl
 **/*.DS_Store
 src/openai_smoke_test.egg-info
+**/*.png
+**/*.csv

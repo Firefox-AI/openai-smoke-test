@@ -124,6 +124,7 @@ This table details the configuration options for the summarization and evaluatio
 | Parameter | Type | Description | Default Value |
 | :--- | :--- | :--- | :--- |
 | **Summarization** | | | |
+| `evaluate` | `bool` | If true, evaluates the quality of the produced summaries. | `false` |
 | `use_dataset` | `bool` | If true, uses the Hugging Face dataset defined at `dataset_name`. Otherwise the smoke test is ran on randomly generated lorem ipsum. | `false` |
 | `log_stats` | `bool` | If true, iterates through the entire dataset and logs scores to `src/smoke/stats/summary/<model_name>.jsonl`. If false, be sure to pass `--queries-per-user` argument | `false` |
 | `dataset_name` | `str` | Hugging Face dataset to load from the Mozilla organization. | `"page-summarization-eval"` |
@@ -172,3 +173,7 @@ multi-turn-chat-smoketest --api-key "<api_key>"  --num-users 5 --queries-per-use
 ```
 
 Logs are stored in `/src/smoke/stats/multi_turn/<model_name>.jsonl`
+
+# Load Testing
+
+Purpose is to test an endpoint and gather stats at how many TPS or QPS it can handle before errors begin to occur. Configure `load_test.py` `args` and `MODEL` if using Vertex. Use `load-test` to begin testing. This will deploy and undeploy the model from Vertex. Deployment typicaly takes 30m before the load test begins.

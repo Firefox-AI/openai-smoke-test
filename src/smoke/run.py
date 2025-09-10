@@ -15,6 +15,7 @@ import openai
 from tqdm import tqdm
 import tiktoken
 from datasets import load_dataset
+from .vertex_client import VertexClient
 
 from smoke.unieval.utils import load_config
 from .summary.summary_evaluator import SummaryEvaluator
@@ -89,23 +90,31 @@ async def run_query(
 		return
 	try:
 		start_time = time.time()
-		summary, first_token_time = await summary_generator.generate(model_name, text, stop_event)
+
+		# EXPERIMENTAL ANTI CACHING MEASURE #
+		# Add N random characters to beginning and end of text
+		# N = 200  # You can change N as needed
+		# random_prefix = ''.join(random.choices(string.ascii_letters + string.digits + string.whitespace, k=N))
+		# random_suffix = ''.join(random.choices(string.ascii_letters + string.digits + string.whitespace, k=N))
+		# text = f"{random_prefix}{text}{random_suffix}"
+		
+		summary, first_token_time, meta_info = await summary_generator.generate(model_name, text, stop_event)
 		end_time = time.time()
 		if summary == "":
 			# 401 or 429
 			stop_event.set()
-			return
-		token_count = len(encoding.encode(summary))
+			raise Exception("No summary returned")
+		token_count = meta_info.get("completion_tokens") + meta_info.get("input_tokens") if meta_info else len(encoding.encode(summary))
 
 
 		# evaluate summary
 		score = {}
-		# if summarization_config.get("use_dataset"):
-		# 	if len(summary) > 0 and len(ref_summary) > 0:
-		# 		score = await summary_evaluator.score(summary, ref_summary, text, summarization_config.get("llm_unieval_scoring", {}).get("score_with_llm"))
-		# 	if debug:
-		# 		print(f"comparing \n==REF==\n{ref_summary} \nto \n==SUM==\n{summary}\n======= \nyields")
-		# 		print(score)
+		if summarization_config.get("evaluate"):
+			if len(summary) > 0 and len(ref_summary) > 0:
+				score = await summary_evaluator.score(summary, ref_summary, text, summarization_config.get("llm_unieval_scoring", {}).get("score_with_llm"))
+			if debug:
+				print(f"comparing \n==REF==\n{ref_summary} \nto \n==SUM==\n{summary}\n======= \nyields")
+				print(score)
 
 		if summarization_config.get("log_stats"):
 			# write score to file with
@@ -118,6 +127,7 @@ async def run_query(
 						"ttft": first_token_time - start_time if first_token_time else None,
 						"tps": token_count / (end_time - start_time),
 						"total_time": end_time - start_time,
+						"total_tokens": token_count,
 						"summary_score": score,
 					})
 
@@ -171,7 +181,6 @@ def stats_summary(values: List[float], label: str) -> List:
 		if values
 		else [label, "-", "-", "-"]
 	)
-
 
 async def user_session(
 	session_id: int,
@@ -305,7 +314,8 @@ async def smoke_test(args):
 	openai_client = openai.AsyncOpenAI(
 		api_key=args.api_key, base_url=args.api_base if args.api_base else None
 	)
-	summary_generator = SummaryGenerator(openai_client, summarization_config, args.use_vertex)
+	vertex_client = VertexClient(args.vertex_region, args.vertex_uri, summarization_config)
+	summary_generator = SummaryGenerator(openai_client, vertex_client, summarization_config)
 	summary_evaluator = SummaryEvaluator(summarization_config.get("llm_unieval_scoring", {})) if use_dataset else None
 
 	try:
@@ -409,6 +419,7 @@ async def smoke_test(args):
 		stats_summary(ttf_times, "Time to First Token (s)"),
 		stats_summary(per_query_tps, "Tokens/sec (Per Query)"),
 		round_trip_stats,
+		stats_summary([s["tps"] for s in stats if s.get("success")], "Total Tokens"),
 	]
 	score_table = [
 		*all_rouge_stats.values(),
@@ -454,7 +465,7 @@ async def smoke_test(args):
 			"threshold": summarization_config.get("metric_threshold", {}).get("round_trip")
 		})
 
-	if use_dataset:
+	if summarization_config.get("evaluate"):
 		print("\n--- SCORE REPORT ---")
 		print(tabulate(score_table, headers=["Type", "Mean", "P50", "P90"], tablefmt="grid"))
 		num_hiccups = sum([s["summary_score"]["hiccup"] for s in stats if s.get("summary_score", {}).get("hiccup")])
@@ -579,6 +590,18 @@ def main():
 		help="Optional custom base URL for the OpenAI API endpoint",
 	)
 	parser.add_argument(
+		"--vertex-region", # use vertex ai
+		type=str,
+		default=None,
+		help="Vertex AI endpoint region",
+	)
+	parser.add_argument(
+		"--vertex-uri", # use vertex ai
+		type=str,
+		default=None,
+		help="Vertex AI endpoint URI",
+	)
+	parser.add_argument(
 		"--single-run",
 		action="store_true",
 		help="Run a single test query with 100 words",
@@ -587,11 +610,6 @@ def main():
 		"--one-rpups", # one request per user, per second
 		action="store_true",
 		help="Make sure each 'user' only makes one request per second. Example usage: users:100, requests_per_user:3 -> simulate 100req/s over 3 seconds",
-	)
-	parser.add_argument(
-		"--use-vertex", # use vertex ai
-		action="store_true",
-		help="Use Vertex AI for inference",
 	)
 	parser.add_argument("--model", type=str, default="gpt-4o", help="OpenAI model name")
 	parser.add_argument(
