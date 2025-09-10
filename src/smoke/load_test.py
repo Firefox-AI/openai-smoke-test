@@ -1,6 +1,5 @@
 import argparse
 import asyncio
-import json
 import os
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -10,6 +9,14 @@ import numpy as np
 
 import vertexai
 from vertexai import model_garden
+
+"""
+1. Deploy VertexAI deployment
+2. Load test against the deployed model
+3. Collect and analyze the results
+4. Find maximum throughput and latency
+5. Undeploy model
+"""
 
 MODEL_NAME_BASE = "qwen_qwen3-235b-a22b-instruct-2507-fp8"
 MODEL_NAME = "qwen/qwen3@qwen3-235b-a22b-instruct-2507-fp8"
@@ -38,14 +45,6 @@ def deploy_model():
 def delete_deployment(endpoint):
 	endpoint.undeploy_all()
 	endpoint.delete()
-
-"""
-1. Create instance of VM with GPU on GCP
-2. Start the VM and wait for it to be ready
-3. Load test against the deployed model
-4. Collect and analyze the results
-5. Find maximum throughput and latency
-"""
 
 async def async_main():
 	MODEL_NAME = f"{MODEL_NAME_BASE} concurrent # 1"
