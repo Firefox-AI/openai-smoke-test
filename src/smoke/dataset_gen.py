@@ -173,7 +173,7 @@ def main():
     parser.add_argument("--dataset-text-column", default="text", help="Column name in the CSV containing the text.")
     parser.add_argument("--output-file", required=True, help="Path to save the output .jsonl file.")
     parser.add_argument("--num-samples", type=int, default=None, help="Optional: The target number of samples for the final dataset.")
-    parser.add_argument("--tokenizer", default="Qwen/Qwen2-72B-Instruct", help="Hugging Face tokenizer name.")
+    parser.add_argument("--tokenizer", default="Qwen/Qwen3-235B-A22B-Instruct-2507", help="Hugging Face tokenizer name.")
     parser.add_argument("--min-tokens", type=int, default=3000, help="Minimum token count for a text to be used.")
     parser.add_argument("--model", required=True, help="Name of the model to use for generation (e.g., on TogetherAI).")
     parser.add_argument("--api-key", required=True, help="TogetherAI API key.")
