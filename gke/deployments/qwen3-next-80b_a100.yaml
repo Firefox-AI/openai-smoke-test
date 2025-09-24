@@ -1,0 +1,103 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vllm-qwen3-next-80b-a100-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: qwen3-next-80b-a100-server
+  template:
+    metadata:
+      labels:
+        app: qwen3-next-80b-a100-server
+        ai.gke.io/model: Qwen-Qwen3-Next-80B-A3B-Thinking
+        ai.gke.io/inference-server: vllm
+    spec:
+      containers:
+      - name: qwen-inference-server
+        image: us-docker.pkg.dev/vertex-ai/vertex-vision-model-garden-dockers/pytorch-vllm-serve:20250801_0916_RC01
+        resources:
+          requests:
+            cpu: "4"
+            memory: "300Gi"
+            ephemeral-storage: "200Gi"
+            nvidia.com/gpu: "2"
+          limits:
+            cpu: "4"
+            memory: "300Gi"
+            ephemeral-storage: "200Gi"
+            nvidia.com/gpu: "2"
+        command: ["python3", "-m", "vllm.entrypoints.openai.api_server"]
+        args:
+        - --model=$(MODEL_ID)
+        - --tensor-parallel-size=2
+        - --host=0.0.0.0
+        - --port=8000
+        - --max-model-len=8192
+        - --max-num-seqs=4
+        - --dtype=auto
+        env:
+        - name: MODEL_ID
+          value: "Qwen/Qwen3-Next-80B-A3B-Thinking"
+        - name: HUGGING_FACE_HUB_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: hf-secret
+              key: hf_token
+        volumeMounts:
+        - mountPath: /dev/shm
+          name: dshm
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 1320
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 1320
+          periodSeconds: 5
+      volumes:
+      - name: dshm
+        emptyDir:
+          medium: Memory
+      nodeSelector:
+        cloud.google.com/gke-accelerator: nvidia-a100-80gb
+        cloud.google.com/gke-spot: "true"
+        cloud.google.com/reservation-name: RESERVATION_URL
+        cloud.google.com/reservation-affinity: "specific"
+        cloud.google.com/gke-gpu-driver-version: latest
+      tolerations:
+      - key: cloud.google.com/gke-spot
+        operator: Equal
+        value: "true"
+        effect: NoSchedule
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: qwen3-next-80b-a100-service
+spec:
+  selector:
+    app: qwen3-next-80b-a100-server
+  type: ClusterIP
+  ports:
+    - protocol: TCP
+      port: 8000
+      targetPort: 8000
+---
+apiVersion: monitoring.googleapis.com/v1
+kind: PodMonitoring
+metadata:
+  name: vllm-qwen3-next-80b-a100-monitoring
+spec:
+  selector:
+    matchLabels:
+      app: qwen3-next-80b-a100-server
+  endpoints:
+  - port: 8000
+    path: /metrics
+    interval: 30s
