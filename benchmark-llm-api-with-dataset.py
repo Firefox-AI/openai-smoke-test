@@ -56,6 +56,15 @@ def process_jsonl_file(client, input_file, output_file, model, max_tokens, long_
                         print("Skipping line: 'messages' key not found.")
                         continue
 
+                    # If long_response flag is set, modify the last user message
+                    if long_response:
+                        # Find the last user message and append the verbose request
+                        for i in range(len(messages) - 1, -1, -1):
+                            if messages[i].get("role") == "user":
+                                original_content = messages[i].get("content", "")
+                                messages[i]["content"] = original_content + "\n\nPlease provide an extremely detailed, verbose, and comprehensive response. Ensure the answer is as long and thorough as possible, exploring all facets of the topic in depth."
+                                break
+
                     # Record start time for e2e duration
                     start_time = time.time()
 
