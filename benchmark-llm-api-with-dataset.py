@@ -10,7 +10,7 @@ def main():
     parser.add_argument("--api-key", required=True, help="OpenAI API key.")
     parser.add_argument("--base-url", required=True, help="OpenAI base URL (proxy endpoint).")
     parser.add_argument("--input-file", required=True, help="Path to the input .jsonl file.")
-    parser.add_argument("--model", default="gpt-4", help="The model to use for chat completions.")
+    parser.add_argument("--model", default="Qwen/Qwen3-235B-A22B-Instruct-2507-FP8", help="The model to use for chat completions.")
     parser.add_argument("--max-tokens", type=int, default=1000, help="The maximum number of tokens to generate.")
     parser.add_argument("--long-response", action="store_true", help="Request extremely detailed and verbose responses from the model.")
     
@@ -42,6 +42,7 @@ def process_jsonl_file(client, input_file, output_file, model, max_tokens, long_
     total_tokens_list = []
     prompt_tokens_list = []
     completion_tokens_list = []
+    tps_list = []
     
     try:
         with open(input_file, 'r') as f_in, open(output_file, 'w') as f_out:
@@ -54,15 +55,6 @@ def process_jsonl_file(client, input_file, output_file, model, max_tokens, long_
                     if not messages:
                         print("Skipping line: 'messages' key not found.")
                         continue
-
-                    # If long_response flag is set, modify the last user message
-                    if long_response:
-                        # Find the last user message and append the verbose request
-                        for i in range(len(messages) - 1, -1, -1):
-                            if messages[i].get("role") == "user":
-                                original_content = messages[i].get("content", "")
-                                messages[i]["content"] = original_content + "\n\nPlease provide an extremely detailed, verbose, and comprehensive response. Ensure the answer is as long and thorough as possible, exploring all facets of the topic in depth."
-                                break
 
                     # Record start time for e2e duration
                     start_time = time.time()
@@ -106,6 +98,10 @@ def process_jsonl_file(client, input_file, output_file, model, max_tokens, long_
                     total_tokens_list.append(total_tokens)
                     prompt_tokens_list.append(prompt_tokens)
                     completion_tokens_list.append(completion_tokens)
+                    
+                    # Calculate TPS
+                    tps = completion_tokens / duration if duration > 0 else 0
+                    tps_list.append(tps)
 
                     # Create simplified output format with token usage
                     output_data = {
@@ -115,7 +111,8 @@ def process_jsonl_file(client, input_file, output_file, model, max_tokens, long_
                         "completion_tokens": completion_tokens,
                         "cached_tokens": cached_tokens,
                         "total_tokens": total_tokens,
-                        "e2e_duration": round(duration, 2)
+                        "e2e_duration": round(duration, 2),
+                        "tps": round(tps, 2)
                     }
 
                     # Write the simplified response to the output file
@@ -154,6 +151,13 @@ def process_jsonl_file(client, input_file, output_file, model, max_tokens, long_
         avg_prompt_tokens = sum(prompt_tokens_list) / len(prompt_tokens_list)
         avg_completion_tokens = sum(completion_tokens_list) / len(completion_tokens_list)
         
+        # TPS statistics
+        avg_tps = sum(tps_list) / len(tps_list)
+        min_tps = min(tps_list)
+        max_tps = max(tps_list)
+        p50_tps = calculate_percentile(tps_list, 50)
+        p90_tps = calculate_percentile(tps_list, 90)
+        
         # Create comprehensive report
         report = {
             "summary": {
@@ -176,6 +180,13 @@ def process_jsonl_file(client, input_file, output_file, model, max_tokens, long_
                 "avg_completion_tokens_per_request": round(avg_completion_tokens, 2),
                 "p50_total_tokens_per_request": p50_total_tokens,
                 "p90_total_tokens_per_request": p90_total_tokens
+            },
+            "tps_stats": {
+                "avg_tps": round(avg_tps, 2),
+                "min_tps": round(min_tps, 2),
+                "max_tps": round(max_tps, 2),
+                "p50_tps": round(p50_tps, 2),
+                "p90_tps": round(p90_tps, 2)
             },
             "model_info": {
                 "model": model,
@@ -202,6 +213,9 @@ def process_jsonl_file(client, input_file, output_file, model, max_tokens, long_
         print(f"Average tokens per request: {avg_total_tokens:.1f}")
         print(f"P50 tokens per request: {p50_total_tokens}")
         print(f"P90 tokens per request: {p90_total_tokens}")
+        print(f"Average TPS: {avg_tps:.2f}")
+        print(f"P50 TPS: {p50_tps:.2f}")
+        print(f"P90 TPS: {p90_tps:.2f}")
         print(f"\nDetailed report saved to: {report_file}")
     else:
         print("No requests were processed successfully.")
