@@ -22,24 +22,24 @@ spec:
             cpu: "4"
             memory: "300Gi"
             ephemeral-storage: "200Gi"
-            nvidia.com/gpu: "2"
+            nvidia.com/gpu: "1"
           limits:
             cpu: "4"
             memory: "300Gi"
             ephemeral-storage: "200Gi"
-            nvidia.com/gpu: "2"
+            nvidia.com/gpu: "1"
         command: ["python3", "-m", "vllm.entrypoints.openai.api_server"]
         args:
         - --model=$(MODEL_ID)
-        - --tensor-parallel-size=2
+        - --tensor-parallel-size=1
+        - --quantization=awq
         - --host=0.0.0.0
         - --port=8000
         - --max-model-len=8192
         - --max-num-seqs=4
-        - --dtype=auto
         env:
         - name: MODEL_ID
-          value: "Qwen/Qwen3-Next-80B-A3B-Thinking"
+          value: "cpatonn/Qwen3-Next-80B-A3B-Instruct-AWQ-4bit"
         - name: HUGGING_FACE_HUB_TOKEN
           valueFrom:
             secretKeyRef:
@@ -65,7 +65,7 @@ spec:
         emptyDir:
           medium: Memory
       nodeSelector:
-        cloud.google.com/gke-accelerator: nvidia-a100-80gb
+        cloud.google.com/gke-accelerator: nvidia-tesla-a100
         cloud.google.com/gke-spot: "true"
         cloud.google.com/reservation-name: RESERVATION_URL
         cloud.google.com/reservation-affinity: "specific"

@@ -241,9 +241,11 @@ if [ "${NODE_POOL_EXISTS}" -ne 0 ]; then
     --cluster "${CLUSTER_NAME}"
     --project "${PROJECT_ID}"
     --region "${REGION}"
+    --node-locations "${ZONE}"
     --machine-type "${MACHINE_TYPE}"
     --accelerator "${ACCELERATOR}"
     --enable-autoscaling
+    --num-nodes=1
     --min-nodes=0
     --max-nodes="${MAX_NODES}"
     --shielded-secure-boot
