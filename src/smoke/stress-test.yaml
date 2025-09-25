@@ -1,0 +1,110 @@
+# stress-test.yaml
+
+# Section 1: Defines the test execution parameters.
+test_config:
+  test_mode: "stress"
+  concurrency_levels: [1, 2, 4, 8, 16, 32]
+  qps_levels: [1, 2, 3, 4, 5] # Included for future QPS mode
+  stress_duration_seconds: 10
+
+  # Defines the raw, per-request metrics to be collected.
+  per_request_metrics:
+    - request_id
+    - provider_name
+    - provider_model
+    - test_mode
+    - traffic_level
+    - dataset_name
+    - dataset_type
+    - ttft
+    - e2e_duration
+    - user_tps
+    - input_tokens
+    - output_tokens
+    - cached_tokens
+    - success
+    - error_message
+
+  # Defines the columns and order for the final aggregated report.
+  aggregation_metrics:
+    - provider_name
+    - provider_model
+    - traffic_mode
+    - traffic_level
+    - input_avg_len
+    - input_stdev_len
+    - input_min_len
+    - input_max_len
+    - input_total_tokens
+    - output_avg_len
+    - output_stdev_len
+    - output_min_len
+    - output_max_len
+    - output_total_tokens
+    - ttft_mean
+    - ttft_stdev
+    - ttft_p05
+    - ttft_p50
+    - ttft_p80
+    - ttft_p95
+    - ttft_p99
+    - ttft_p999
+    - ttft_distribution
+    - user_tps_mean
+    - user_tps_stdev
+    - user_tps_p05
+    - user_tps_p50
+    - user_tps_p80
+    - user_tps_p95
+    - user_tps_p99
+    - user_tps_p999
+    - user_tps_distribution
+    - e2e_mean
+    - e2e_stdev
+    - e2e_p05
+    - e2e_p50
+    - e2e_p80
+    - e2e_p95
+    - e2e_p99
+    - e2e_p999
+    - e2e_distribution
+    - summary_total_num_requests
+    - summary_total_elapsed_time_s
+    - summary_job_level_tps
+    - summary_actual_qps
+    - summary_num_failed_requests
+    - per_gpu_num_gpus
+    - per_gpu_tps_mean
+    - per_gpu_tps_stdev
+    - acceptance_rate
+    - hf_dataset_name
+
+# Section 2: Defines vendors to override or add to the base config.
+vendors:
+  vertexai:
+    api_base: "https://us-central1-aiplatform.googleapis.com/v1/projects/your-project-id/locations/us-central1/endpoints/your-endpoint-id"
+    api_key_env: "VERTEX_API_KEY"
+    model_config:
+      Qwen/Qwen1.5-7B-Chat-AWQ:
+        max_tokens: 1000
+
+# Section 3: Defines the test scenarios or "features".
+features:
+  chatbot:
+    note: "A general-purpose chatbot test."
+    datasets:
+      - "short_qa_v1"
+      - "goldenfox_5000_tokens"
+      - "goldenfox_2000_tokens"
+
+# Section 4: A library of all available datasets.
+datasets:
+  goldenfox_5000_tokens:
+    note: "A dataset of 500 prompts with a minimum of 5000 tokens."
+    path: "src/smoke/data/generated_goldenfox_dataset_500_min_5000tokens.jsonl"
+    type: "custom_messages_jsonl"
+
+  goldenfox_2000_tokens:
+    note: "A dataset of 500 prompts with a minimum of 2000 tokens."
+    path: "src/smoke/data/generated_goldenfox_dataset_500_min_2000tokens.jsonl"
+    type: "custom_messages_jsonl"
