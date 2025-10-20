@@ -74,7 +74,7 @@ gcloud config set compute/region "${REGION}"
 echo "### Step 2: Getting Cluster Credentials ###"
 if gcloud container clusters get-credentials "${CLUSTER_NAME}" --region="${REGION}" --project="${PROJECT_ID}" 2>/dev/null; then
   echo "Successfully connected to cluster ${CLUSTER_NAME}"
-  
+
   echo "### Step 3: Deleting Kubernetes AI Model Resources ###"
   # Use a label selector for reliability instead of a specific file
   kubectl delete deployment,service -l ai.gke.io/model --ignore-not-found=true
@@ -83,7 +83,7 @@ if gcloud container clusters get-credentials "${CLUSTER_NAME}" --region="${REGIO
   echo "### Step 4: Deleting Kubernetes Secret ###"
   kubectl delete secret "${SECRET_NAME}" --ignore-not-found=true
   echo "Deleted secret ${SECRET_NAME}."
-  
+
 else
   echo "Warning: Could not connect to cluster ${CLUSTER_NAME}. It may already be deleted."
 fi

@@ -60,9 +60,9 @@ monitor_gpu() {
   local pod_name=$1
   echo "### GPU Utilization for pod: ${pod_name} ###"
   echo "Press [CTRL+C] to stop GPU monitoring and view logs."
-  
+
   trap 'echo ""; echo "Stopping GPU monitoring..."; return' INT
-  
+
   while true; do
     echo "--- $(date) ---"
     if kubectl exec "${pod_name}" -- nvidia-smi --query-gpu=index,name,utilization.gpu,memory.used,memory.total,temperature.gpu --format=csv,noheader,nounits 2>/dev/null; then
@@ -72,7 +72,7 @@ monitor_gpu() {
     fi
     sleep 10
   done
-  
+
   trap - INT
 }
 
