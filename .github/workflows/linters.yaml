@@ -1,0 +1,31 @@
+name: linters
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, ready_for_review]
+  push:
+    branches:
+      - main
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install uv
+        run: pip install uv
+
+      - name: Sync dependencies
+        run: |
+          uv venv
+          uv sync --group lint
+
+      - name: Run linters
+        run: uv run pre-commit run --all-files --verbose
