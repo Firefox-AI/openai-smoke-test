@@ -5,4 +5,7 @@ creds.json
 **/*.env
 **/*.jsonl
 **/*.DS_Store
-src/openai_smoke_test.egg-info
+*.egg-info
+uv.lock
+.venv
+.ruff_cache

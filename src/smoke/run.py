@@ -27,9 +27,12 @@ class Article(TypedDict):
     content: str
     reference_summary: str
 
+
 dataset_lock = asyncio.Lock()
 stat_file_lock = asyncio.Lock()
 dataset_index = 0
+
+
 async def iterate_thru_dataset_safe(dataset) -> Article | None:
     global dataset_index
     async with dataset_lock:
@@ -39,8 +42,10 @@ async def iterate_thru_dataset_safe(dataset) -> Article | None:
             return data
         return None
 
+
 def get_random_article_from_dataset(dataset) -> Article:
     return random.choice(dataset)
+
 
 def generate_random_words(count=10, length=10):
     words = []
@@ -83,14 +88,16 @@ async def run_query(
     test_rate_limit=False,
     pbar=None,
     stop_event=None,
-    debug=False
+    debug=False,
 ):
     if stop_event.is_set():
         return
     try:
         start_time = time.time()
 
-        summary, first_token_time = await summary_generator.generate(model_name, text, stop_event)
+        summary, first_token_time = await summary_generator.generate(
+            model_name, text, stop_event
+        )
         end_time = time.time()
         if summary == "":
             # 401 or 429
@@ -98,31 +105,43 @@ async def run_query(
             return
         token_count = len(encoding.encode(summary))
 
-
         # evaluate summary
         score = {}
         if summarization_config.get("use_dataset"):
             if len(summary) > 0 and len(ref_summary) > 0:
-                score = await summary_evaluator.score(summary, ref_summary, text, summarization_config.get("llm_unieval_scoring", {}).get("score_with_llm"))
+                score = await summary_evaluator.score(
+                    summary,
+                    ref_summary,
+                    text,
+                    summarization_config.get("llm_unieval_scoring", {}).get(
+                        "score_with_llm"
+                    ),
+                )
             if debug:
-                print(f"comparing \n==REF==\n{ref_summary} \nto \n==SUM==\n{summary}\n======= \nyields")
+                print(
+                    f"comparing \n==REF==\n{ref_summary} \nto \n==SUM==\n{summary}\n======= \nyields"
+                )
                 print(score)
 
         if summarization_config.get("log_stats"):
             # write score to file with
             async with stat_file_lock:
-                async with aiofiles.open(stats_file, mode='a') as f:
-                    json_string = json.dumps({
-                        "original_text": text,
-                        "reference_summary": ref_summary,
-                        "predicted_summary": summary,
-                        "ttft": first_token_time - start_time if first_token_time else None,
-                        "tps": token_count / (end_time - start_time),
-                        "total_time": end_time - start_time,
-                        "summary_score": score,
-                    })
+                async with aiofiles.open(stats_file, mode="a") as f:
+                    json_string = json.dumps(
+                        {
+                            "original_text": text,
+                            "reference_summary": ref_summary,
+                            "predicted_summary": summary,
+                            "ttft": first_token_time - start_time
+                            if first_token_time
+                            else None,
+                            "tps": token_count / (end_time - start_time),
+                            "total_time": end_time - start_time,
+                            "summary_score": score,
+                        }
+                    )
 
-                    await f.write(json_string + '\n')
+                    await f.write(json_string + "\n")
 
         stats.append(
             {
@@ -193,7 +212,7 @@ async def user_session(
     test_rate_limit,
     pbar,
     stop_event,
-    debug
+    debug,
 ):
     for query_id in range(queries_per_user):
         if stop_event.is_set():
@@ -233,8 +252,9 @@ async def user_session(
             test_rate_limit,
             pbar,
             stop_event,
-            debug
+            debug,
         )
+
 
 def check_thresholds(threshold_errors, threshold_config, stats):
     for key in stats.keys():
@@ -242,11 +262,13 @@ def check_thresholds(threshold_errors, threshold_config, stats):
         threshold = threshold_config.get(key, 0)
 
         if score_value != "-" and float(score_value) < threshold:
-            threshold_errors.append({
-                "name": key,
-                "value": float(score_value),
-                "threshold": threshold,
-            })
+            threshold_errors.append(
+                {
+                    "name": key,
+                    "value": float(score_value),
+                    "threshold": threshold,
+                }
+            )
 
 
 async def async_main(args):
@@ -267,7 +289,10 @@ async def async_main(args):
 
     config = load_config()
     summarization_config = config.get("features", {}).get("summarization", {})
-    use_dataset, dataset_name = summarization_config.get("use_dataset", False), summarization_config.get("dataset_name", "")
+    use_dataset, dataset_name = (
+        summarization_config.get("use_dataset", False),
+        summarization_config.get("dataset_name", ""),
+    )
     log_stats = summarization_config.get("log_stats", False)
 
     base_text, ref_summary = "", ""
@@ -280,7 +305,9 @@ async def async_main(args):
             # load from stats_file and skip entries with the same original_text
             with open(stats_file, "r") as f:
                 stats = [json.loads(line)["original_text"] for line in f]
-            dataset = [article for article in dataset if article["content"] not in stats]
+            dataset = [
+                article for article in dataset if article["content"] not in stats
+            ]
             total_queries = len(dataset)
             queries_per_user = total_queries // args.num_users
 
@@ -301,7 +328,11 @@ async def async_main(args):
         api_key=args.api_key, base_url=args.api_base if args.api_base else None
     )
     summary_generator = SummaryGenerator(openai_client, summarization_config)
-    summary_evaluator = SummaryEvaluator(summarization_config.get("llm_unieval_scoring", {})) if use_dataset else None
+    summary_evaluator = (
+        SummaryEvaluator(summarization_config.get("llm_unieval_scoring", {}))
+        if use_dataset
+        else None
+    )
 
     try:
         encoding = tiktoken.encoding_for_model(args.model)
@@ -312,7 +343,18 @@ async def async_main(args):
     if args.single_run:
         print("Running a single test query with 100 words...")
         sample_text = " ".join(base_text.split()[:100])
-        await run_query(0, 0, sample_text, ref_summary, stats, args.model, summary_generator, encoding, summarization_config, summary_evaluator)
+        await run_query(
+            0,
+            0,
+            sample_text,
+            ref_summary,
+            stats,
+            args.model,
+            summary_generator,
+            encoding,
+            summarization_config,
+            summary_evaluator,
+        )
     else:
         sizes = generate_even_sizes(total_queries, args.min_words, args.max_words)
 
@@ -374,22 +416,92 @@ async def async_main(args):
         for s in stats
         if s.get("success") and s.get("tps") is not None and s.get("total_time")
     ]
-    round_trip_stats = stats_summary([s["total_time"] for s in stats if s.get("success") and s.get("total_time")], "Round trip (s)")
+    round_trip_stats = stats_summary(
+        [s["total_time"] for s in stats if s.get("success") and s.get("total_time")],
+        "Round trip (s)",
+    )
 
     all_rouge_stats = {
-        "rouge1": stats_summary([s["summary_score"]["rouge"]["rouge1"] for s in stats if s.get("summary_score", {}).get("rouge", {}).get("rouge1") is not None], "Rouge 1"),
-        "rouge2": stats_summary([s["summary_score"]["rouge"]["rouge2"] for s in stats if s.get("summary_score", {}).get("rouge", {}).get("rouge2") is not None], "Rouge 2"),
-        "rougeLsum": stats_summary([s["summary_score"]["rouge"]["rougeLsum"] for s in stats if s.get("summary_score", {}).get("rouge", {}).get("rougeLsum") is not None], "RougeLsum"),
+        "rouge1": stats_summary(
+            [
+                s["summary_score"]["rouge"]["rouge1"]
+                for s in stats
+                if s.get("summary_score", {}).get("rouge", {}).get("rouge1") is not None
+            ],
+            "Rouge 1",
+        ),
+        "rouge2": stats_summary(
+            [
+                s["summary_score"]["rouge"]["rouge2"]
+                for s in stats
+                if s.get("summary_score", {}).get("rouge", {}).get("rouge2") is not None
+            ],
+            "Rouge 2",
+        ),
+        "rougeLsum": stats_summary(
+            [
+                s["summary_score"]["rouge"]["rougeLsum"]
+                for s in stats
+                if s.get("summary_score", {}).get("rouge", {}).get("rougeLsum")
+                is not None
+            ],
+            "RougeLsum",
+        ),
     }
-    bleu_stats = stats_summary([
-        s["summary_score"]["bleu"]["bleu"] for s in stats if s.get("summary_score", {}).get("bleu", {}).get("bleu") is not None
-    ], "BLEU")
+    bleu_stats = stats_summary(
+        [
+            s["summary_score"]["bleu"]["bleu"]
+            for s in stats
+            if s.get("summary_score", {}).get("bleu", {}).get("bleu") is not None
+        ],
+        "BLEU",
+    )
     all_unieval_stats = {
-        "unieval_consistency": stats_summary([s["summary_score"]["unieval"]["consistency"] for s in stats if s.get("summary_score", {}).get("unieval", {}).get("consistency") is not None], "Unieval consistency"),
-        "unieval_coherence": stats_summary([s["summary_score"]["unieval"]["coherence"] for s in stats if s.get("summary_score", {}).get("unieval", {}).get("coherence") is not None], "Unieval coherence"),
-        "unieval_fluency": stats_summary([s["summary_score"]["unieval"]["fluency"] for s in stats if s.get("summary_score", {}).get("unieval", {}).get("fluency") is not None], "Unieval fluency"),
-        "unieval_relevance": stats_summary([s["summary_score"]["unieval"]["relevance"] for s in stats if s.get("summary_score", {}).get("unieval", {}).get("relevance") is not None], "Unieval relevance"),
-        "unieval_overall": stats_summary([s["summary_score"]["unieval"]["overall"] for s in stats if s.get("summary_score", {}).get("unieval", {}).get("overall") is not None], "Unieval overall"),
+        "unieval_consistency": stats_summary(
+            [
+                s["summary_score"]["unieval"]["consistency"]
+                for s in stats
+                if s.get("summary_score", {}).get("unieval", {}).get("consistency")
+                is not None
+            ],
+            "Unieval consistency",
+        ),
+        "unieval_coherence": stats_summary(
+            [
+                s["summary_score"]["unieval"]["coherence"]
+                for s in stats
+                if s.get("summary_score", {}).get("unieval", {}).get("coherence")
+                is not None
+            ],
+            "Unieval coherence",
+        ),
+        "unieval_fluency": stats_summary(
+            [
+                s["summary_score"]["unieval"]["fluency"]
+                for s in stats
+                if s.get("summary_score", {}).get("unieval", {}).get("fluency")
+                is not None
+            ],
+            "Unieval fluency",
+        ),
+        "unieval_relevance": stats_summary(
+            [
+                s["summary_score"]["unieval"]["relevance"]
+                for s in stats
+                if s.get("summary_score", {}).get("unieval", {}).get("relevance")
+                is not None
+            ],
+            "Unieval relevance",
+        ),
+        "unieval_overall": stats_summary(
+            [
+                s["summary_score"]["unieval"]["overall"]
+                for s in stats
+                if s.get("summary_score", {}).get("unieval", {}).get("overall")
+                is not None
+            ],
+            "Unieval overall",
+        ),
     }
 
     total_tokens = sum(s["tps"] for s in stats if s.get("success"))
@@ -416,7 +528,11 @@ async def async_main(args):
     print(f"Total Queries: {total}")
     print(f"Successful Queries: {successes}")
     print(f"Failed Queries: {failures}")
-    print(tabulate(metrics_table, headers=["Metric", "Mean", "P50", "P90"], tablefmt="grid"))
+    print(
+        tabulate(
+            metrics_table, headers=["Metric", "Mean", "P50", "P90"], tablefmt="grid"
+        )
+    )
 
     print(
         f"\nGlobal Throughput: {global_tps:.2f} tokens/sec across {total_duration:.2f} seconds"
@@ -429,35 +545,65 @@ async def async_main(args):
         print(f"Error: {errors[0]['error']}")
 
     threshold_errors = []
-    if metrics_table[0][1] != "-" and float(metrics_table[0][1]) > summarization_config.get("metric_threshold", {}).get("ttft"):
-        threshold_errors.append({
-            "name": "TTFT",
-            "value": float(metrics_table[0][1]),
-            "threshold": summarization_config.get("metric_threshold", {}).get("ttft")
-        })
-    if metrics_table[1][1] != "-" and float(metrics_table[1][1]) < summarization_config.get("metric_threshold", {}).get("per_query_tps"):
-        threshold_errors.append({
-            "name": "PER QUERY TPS",
-            "value": float(metrics_table[1][1]),
-            "threshold": summarization_config.get("metric_threshold", {}).get("per_query_tps")
-        })
-    if metrics_table[2][1] != "-" and float(metrics_table[2][1]) > summarization_config.get("metric_threshold", {}).get("round_trip"):
-        threshold_errors.append({
-            "name": "ROUND TRIP",
-            "value": float(metrics_table[2][1]),
-            "threshold": summarization_config.get("metric_threshold", {}).get("round_trip")
-        })
+    if metrics_table[0][1] != "-" and float(
+        metrics_table[0][1]
+    ) > summarization_config.get("metric_threshold", {}).get("ttft"):
+        threshold_errors.append(
+            {
+                "name": "TTFT",
+                "value": float(metrics_table[0][1]),
+                "threshold": summarization_config.get("metric_threshold", {}).get(
+                    "ttft"
+                ),
+            }
+        )
+    if metrics_table[1][1] != "-" and float(
+        metrics_table[1][1]
+    ) < summarization_config.get("metric_threshold", {}).get("per_query_tps"):
+        threshold_errors.append(
+            {
+                "name": "PER QUERY TPS",
+                "value": float(metrics_table[1][1]),
+                "threshold": summarization_config.get("metric_threshold", {}).get(
+                    "per_query_tps"
+                ),
+            }
+        )
+    if metrics_table[2][1] != "-" and float(
+        metrics_table[2][1]
+    ) > summarization_config.get("metric_threshold", {}).get("round_trip"):
+        threshold_errors.append(
+            {
+                "name": "ROUND TRIP",
+                "value": float(metrics_table[2][1]),
+                "threshold": summarization_config.get("metric_threshold", {}).get(
+                    "round_trip"
+                ),
+            }
+        )
 
     if use_dataset:
         print("\n--- SCORE REPORT ---")
-        print(tabulate(score_table, headers=["Type", "Mean", "P50", "P90"], tablefmt="grid"))
-        num_hiccups = sum([s["summary_score"]["hiccup"] for s in stats if s.get("summary_score", {}).get("hiccup")])
+        print(
+            tabulate(
+                score_table, headers=["Type", "Mean", "P50", "P90"], tablefmt="grid"
+            )
+        )
+        num_hiccups = sum(
+            [
+                s["summary_score"]["hiccup"]
+                for s in stats
+                if s.get("summary_score", {}).get("hiccup")
+            ]
+        )
         percentage_of_hiccups = num_hiccups / max(1, total)
-        print(f"Num hiccups: {num_hiccups} --- Percentage of hiccups: {percentage_of_hiccups}")
+        print(
+            f"Num hiccups: {num_hiccups} --- Percentage of hiccups: {percentage_of_hiccups}"
+        )
         # Overall score calculation
         weights = {
-            "rouge1": .1,
-            "rouge2": .1,
+            "rouge1": 0.1,
+            "rouge2": 0.1,
             "rougeLsum": 0.2,
             "bleu": 0.1,
             "unieval_consistency": 0.05,
@@ -467,49 +613,74 @@ async def async_main(args):
             "unieval_overall": 0.2,
             "percentage_of_hiccups": 0.1,
         }
-        rouge_score = sum(float(all_rouge_stats[key][1]) * weights[key] for key in all_rouge_stats
-                          if all_rouge_stats[key][1] != "-")
-        unieval_score = sum(float(all_unieval_stats[key][1]) * weights[key] for key in all_unieval_stats if
-                            all_unieval_stats[key][1] != "-")
+        rouge_score = sum(
+            float(all_rouge_stats[key][1]) * weights[key]
+            for key in all_rouge_stats
+            if all_rouge_stats[key][1] != "-"
+        )
+        unieval_score = sum(
+            float(all_unieval_stats[key][1]) * weights[key]
+            for key in all_unieval_stats
+            if all_unieval_stats[key][1] != "-"
+        )
         overall_score = (
-                rouge_score +
-                (float(bleu_stats[1]) * weights["bleu"] if bleu_stats[1] != "-" else 0) +
-                unieval_score +
-                ((1-percentage_of_hiccups) * weights["percentage_of_hiccups"])
+            rouge_score
+            + (float(bleu_stats[1]) * weights["bleu"] if bleu_stats[1] != "-" else 0)
+            + unieval_score
+            + ((1 - percentage_of_hiccups) * weights["percentage_of_hiccups"])
         )
         print(f"Overall Score: --- {args.model}: {overall_score:.2f} ---")
         score_threshold_config = summarization_config.get("score_threshold", {})
 
-        check_thresholds(threshold_errors, score_threshold_config.get("rouge", {}), all_rouge_stats)
+        check_thresholds(
+            threshold_errors, score_threshold_config.get("rouge", {}), all_rouge_stats
+        )
 
-        if bleu_stats[1] != "-" and float(bleu_stats[1]) < score_threshold_config.get("bleu", 0):
-            threshold_errors.append({
-                "name": "bleu",
-                "value": float(bleu_stats[1]),
-                "threshold": score_threshold_config.get("bleu")
-            })
+        if bleu_stats[1] != "-" and float(bleu_stats[1]) < score_threshold_config.get(
+            "bleu", 0
+        ):
+            threshold_errors.append(
+                {
+                    "name": "bleu",
+                    "value": float(bleu_stats[1]),
+                    "threshold": score_threshold_config.get("bleu"),
+                }
+            )
 
-        check_thresholds(threshold_errors, score_threshold_config.get("unieval", {}), all_unieval_stats)
+        check_thresholds(
+            threshold_errors,
+            score_threshold_config.get("unieval", {}),
+            all_unieval_stats,
+        )
 
-        if percentage_of_hiccups > score_threshold_config.get("percentage_of_hiccups", 1):
-            threshold_errors.append({
-                "name": "percentage of hiccups",
-                "value": float(percentage_of_hiccups),
-                "threshold": score_threshold_config.get("percentage of hiccups")
-            })
+        if percentage_of_hiccups > score_threshold_config.get(
+            "percentage_of_hiccups", 1
+        ):
+            threshold_errors.append(
+                {
+                    "name": "percentage of hiccups",
+                    "value": float(percentage_of_hiccups),
+                    "threshold": score_threshold_config.get("percentage of hiccups"),
+                }
+            )
 
         if overall_score < score_threshold_config.get("overall", 0):
-            threshold_errors.append({
-                "name": "overall",
-                "value": float(overall_score),
-                "threshold": score_threshold_config.get("overall")
-            })
+            threshold_errors.append(
+                {
+                    "name": "overall",
+                    "value": float(overall_score),
+                    "threshold": score_threshold_config.get("overall"),
+                }
+            )
 
     if len(threshold_errors) > 0:
         print("\n--- THRESHOLD ERROR ---")
-        error_details = "\n".join([
-            f"  - {error['name']}: value {error['value']:.4f} is beyond threshold {error['threshold']:.4f}" for error in threshold_errors
-        ])
+        error_details = "\n".join(
+            [
+                f"  - {error['name']}: value {error['value']:.4f} is beyond threshold {error['threshold']:.4f}"
+                for error in threshold_errors
+            ]
+        )
         if summarization_config.get("error_on_threshold_fails", False):
             raise Exception(f"Threshold Error:\n{error_details}")
         else:

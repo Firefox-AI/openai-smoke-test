@@ -6,12 +6,22 @@ from ..unieval.utils import convert_to_json
 from pydantic import BaseModel, Field
 import instructor
 
+
 class EvaluationScores(BaseModel):
-    consistency: float = Field(..., description="Factual accuracy compared to the original content (0.0-1.0).")
-    coherence: float = Field(..., description="Logical flow and readability of the summary (0.0-1.0).")
+    consistency: float = Field(
+        ..., description="Factual accuracy compared to the original content (0.0-1.0)."
+    )
+    coherence: float = Field(
+        ..., description="Logical flow and readability of the summary (0.0-1.0)."
+    )
     fluency: float = Field(..., description="Grammar and style quality (0.0-1.0).")
-    relevance: float = Field(..., description="How well the summary captures the main points (0.0-1.0).")
-    overall: float = Field(..., description="A holistic score of the summary's quality (0.0-1.0).")
+    relevance: float = Field(
+        ..., description="How well the summary captures the main points (0.0-1.0)."
+    )
+    overall: float = Field(
+        ..., description="A holistic score of the summary's quality (0.0-1.0)."
+    )
+
 
 class SummaryEvaluator:
     def __init__(self, llm_scoring_config: dict):
@@ -22,34 +32,47 @@ class SummaryEvaluator:
         self.unieval_dimension = ["consistency", "coherence", "fluency", "relevance"]
 
         self.llm_scoring_config = llm_scoring_config
-        self.scorer_client = instructor.patch(openai.AsyncOpenAI(
-            api_key=self.llm_scoring_config.get("api_key"), base_url=self.llm_scoring_config.get("base_url")
-        ))
+        self.scorer_client = instructor.patch(
+            openai.AsyncOpenAI(
+                api_key=self.llm_scoring_config.get("api_key"),
+                base_url=self.llm_scoring_config.get("base_url"),
+            )
+        )
 
     def compute_unieval(self, prediction, reference, original_content):
-        return self.unieval.evaluate(convert_to_json(
-            output_list=[prediction],
-            src_list=[original_content],
-            ref_list=[reference],
-        ), print_result=False, dims=self.unieval_dimension)
-
+        return self.unieval.evaluate(
+            convert_to_json(
+                output_list=[prediction],
+                src_list=[original_content],
+                ref_list=[reference],
+            ),
+            print_result=False,
+            dims=self.unieval_dimension,
+        )
 
     async def score_summary_with_model(self, prediction, reference, original_content):
-        return (await self.scorer_client.chat.completions.create(
-            model=self.llm_scoring_config.get("model_name"),
-            response_model=EvaluationScores,
-            messages=[
-                {"role": "system", "content": self.llm_scoring_config.get("system_prompt")},
-                {"role": "user", "content": self.llm_scoring_config.get("user_prompt")
+        return (
+            await self.scorer_client.chat.completions.create(
+                model=self.llm_scoring_config.get("model_name"),
+                response_model=EvaluationScores,
+                messages=[
+                    {
+                        "role": "system",
+                        "content": self.llm_scoring_config.get("system_prompt"),
+                    },
+                    {
+                        "role": "user",
+                        "content": self.llm_scoring_config.get("user_prompt")
                         .replace("{original_content}", original_content)
                         .replace("{reference}", reference)
-                        .replace("{prediction}", prediction)
-                 },
-            ],
-            temperature=0.1,
-            top_p=0.01,
-            stream=False,
-        )).model_dump()
+                        .replace("{prediction}", prediction),
+                    },
+                ],
+                temperature=0.1,
+                top_p=0.01,
+                stream=False,
+            )
+        ).model_dump()
 
     """Evaluates text that may contain duplicate or hallucinated characters/words
     Score is from 0 to 1 -> 1 being 100% certain there's no hiccup
@@ -62,7 +85,10 @@ class SummaryEvaluator:
     Returns:
         bool: score is below the is_hiccup_threshold
     """
-    def contains_hiccup(self, text: str, threshold_ratio: float = 0.1, is_hiccup_threshold: float = 0.5) -> bool:
+
+    def contains_hiccup(
+        self, text: str, threshold_ratio: float = 0.1, is_hiccup_threshold: float = 0.5
+    ) -> bool:
         score = 1
 
         base_word_penalty = 0.05
@@ -94,7 +120,9 @@ class SummaryEvaluator:
             phrase_counts = {}
             for i in range(len(words) - n + 1):
                 # Build the normalized phrase
-                phrase = " ".join([w.lower().strip(string.punctuation) for w in words[i:i + n]])
+                phrase = " ".join(
+                    [w.lower().strip(string.punctuation) for w in words[i : i + n]]
+                )
                 if phrase:
                     phrase_counts[phrase] = phrase_counts.get(phrase, 0) + 1
 
@@ -118,10 +146,22 @@ class SummaryEvaluator:
             return True
         return False
 
-    async def score(self, predictions: str, reference_summary: str, text: str, score_with_llm: bool):
+    async def score(
+        self, predictions: str, reference_summary: str, text: str, score_with_llm: bool
+    ):
         return {
-            "rouge": self.rouge.compute(predictions=[predictions], references=[reference_summary]),
-            "bleu": self.bleu.compute(predictions=[predictions], references=[reference_summary]),
-            "unieval": (await self.score_summary_with_model(predictions, reference_summary, text)) if score_with_llm else self.compute_unieval(predictions, reference_summary, text)[0],
+            "rouge": self.rouge.compute(
+                predictions=[predictions], references=[reference_summary]
+            ),
+            "bleu": self.bleu.compute(
+                predictions=[predictions], references=[reference_summary]
+            ),
+            "unieval": (
+                await self.score_summary_with_model(
+                    predictions, reference_summary, text
+                )
+            )
+            if score_with_llm
+            else self.compute_unieval(predictions, reference_summary, text)[0],
             "hiccup": 1 if self.contains_hiccup(predictions) else 0,
         }

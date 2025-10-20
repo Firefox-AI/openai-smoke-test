@@ -14,12 +14,27 @@ A smoke testing tool for OpenAI-compatible endpoints.
 
 ## Setup
 
-```bash
-make setup
-```
+
+We recommend using [uv](https://docs.astral.sh/uv/getting-started/installation/):
+
+1. `make`
+2. `source .venv/bin/activate`
 
 This creates a virtual environment in .venv/, installs dependencies, and
 installs the tool locally in editable mode.
+
+
+### Lint
+
+Ensure all checks pass:
+
+`pre-commit run --all-files --verbose`
+
+## Installation
+
+`make install`
+
+
 
 ## Example Usage
 

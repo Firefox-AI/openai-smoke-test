@@ -1,20 +1,25 @@
-PYTHON=python3
 VENV=.venv
-REQS=requirements.txt
 
-.PHONY: all setup run clean qdrant-up 
+.PHONY: all setup install lint smoke clean
 
 all: setup
 
 setup:
-	$(PYTHON) -m venv $(VENV)
-	$(VENV)/bin/pip install --upgrade pip 
-	$(VENV)/bin/pip install -r $(REQS)
-	$(VENV)/bin/pip install -e .
-  
+	uv venv
+	uv sync --all-groups
+	uv run pre-commit install
+	@echo ""
+	@echo "✅ Setup complete! To activate your environment, run:"
+	@echo "   source $(VENV)/bin/activate"
+
+install:
+	uv pip install --no-cache-dir -e .
+
+lint:
+	uv run ruff check .
+
 smoke:
 	$(VENV)/bin/openai-smoketest
 
 clean:
 	rm -rf __pycache__ .cache $(VENV)
-

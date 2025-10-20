@@ -4,8 +4,11 @@ from typing import List
 from ..mistral_client import MistralClient
 import openai
 
+
 class MultiTurnChatClient:
-    def __init__(self, openai_client: openai.AsyncClient, initial_context: List[str] = []):
+    def __init__(
+        self, openai_client: openai.AsyncClient, initial_context: List[str] = []
+    ):
         """
         Initializes the generator with API clients and configuration.
         This client is made for multi-turn chat interactions.
@@ -13,7 +16,9 @@ class MultiTurnChatClient:
         :param openai_client: An initialized async OpenAI client.
         """
         self.openai_client = openai_client
-        self.mistral_client = MistralClient({"stream": True, "service_account_file": "creds.json"})
+        self.mistral_client = MistralClient(
+            {"stream": True, "service_account_file": "creds.json"}
+        )
         self.context = initial_context
 
     def add_exchange_to_context(self, query: str, response: str):
@@ -21,7 +26,9 @@ class MultiTurnChatClient:
         if response and len(response.strip()) > 0:
             self.context.append({"role": "assistant", "content": response})
 
-    async def generate_next(self, model_name: str, query: str, stop_event: asyncio.Event) -> tuple[str, float]:
+    async def generate_next(
+        self, model_name: str, query: str, stop_event: asyncio.Event
+    ) -> tuple[str, float]:
         """
         :param model_name: The name of the model to use (e.g., "mistral-7b", "gpt-4").
         :param stop_event: An initialized StopEvent object.
@@ -33,8 +40,8 @@ class MultiTurnChatClient:
                 response, first_token_time = await self.mistral_client.completion(
                     model_name,
                     [*self.context, {"role": "user", "content": query}],
-                    0.1, #temperature
-                    0.01, #top_p
+                    0.1,  # temperature
+                    0.01,  # top_p
                     stop_event,
                 )
             except Exception as e:
@@ -43,10 +50,7 @@ class MultiTurnChatClient:
         else:
             stream = await self.openai_client.chat.completions.create(
                 model=model_name,
-                messages=[
-                    *self.context,
-                    {"role": "user", "content": query}
-                ],
+                messages=[*self.context, {"role": "user", "content": query}],
                 temperature=0.1,
                 top_p=0.01,
                 stream=True,
