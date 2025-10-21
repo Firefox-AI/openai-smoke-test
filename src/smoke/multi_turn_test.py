@@ -14,7 +14,6 @@ import random
 from tqdm import tqdm
 import tiktoken
 
-from smoke.unieval.utils import load_config
 from smoke.multi_turn_chat.multi_turn_chat_client import MultiTurnChatClient
 import json
 
@@ -35,35 +34,38 @@ def stats_summary(values: List[float], label: str) -> List:
         else [label, "-", "-", "-"]
     )
 
+
 # Used for loading /multi_turn_chat/data/queries csvs
 def load_single_column_csv(file_path: str) -> List[str]:
-    with open(file_path, newline='', encoding='utf-8') as csvfile:
+    with open(file_path, newline="", encoding="utf-8") as csvfile:
         reader = csv.reader(csvfile)
         return [row[0] for row in reader if row]
 
+
 # Used for loading all initial_context json files
 def load_all_json_files_in_dir(directory: str) -> List[List[dict]]:
-    json_files = [f for f in os.listdir(directory) if f.endswith('.json')]
+    json_files = [f for f in os.listdir(directory) if f.endswith(".json")]
     if not json_files:
         raise FileNotFoundError("No .json files found in directory.")
     data = []
     for json_file in json_files:
         file_path = os.path.join(directory, json_file)
-        with open(file_path, 'r', encoding='utf-8') as f:
+        with open(file_path, "r", encoding="utf-8") as f:
             file_data = json.load(f)
             data.append(file_data)
     return data
 
+
 async def run_multi_turn_test(
     session_id: int,
-    text_array: List[str], # all questions to ask
+    text_array: List[str],  # all questions to ask
     stats: List[dict],
     model_name: str,
     multi_turn_chat_client: MultiTurnChatClient,
     encoding,
     stop_event=None,
     pbar=None,
-    debug=False
+    debug=False,
 ):
     print(f"Session {session_id} starting...")
     for query_id, query in enumerate(text_array):
@@ -84,37 +86,42 @@ async def run_multi_turn_test(
             token_count = len(encoding.encode(response))
 
             async with stat_file_lock:
-                async with aiofiles.open(f"src/smoke/stats/multi_turn/{model_name}.jsonl", mode="a") as f:
-                    json_string = json.dumps({
-                        "context_length": len(multi_turn_chat_client.context[:-1]),
-                        "context": multi_turn_chat_client.context[:-1],
-                        "response": response,
-                        "ttft": first_token_time - start_time if first_token_time else None,
-                        "tps": token_count / (end_time - start_time),
-                        "total_time": end_time - start_time,
-                    })
+                async with aiofiles.open(
+                    f"src/smoke/stats/multi_turn/{model_name}.jsonl", mode="a"
+                ) as f:
+                    json_string = json.dumps(
+                        {
+                            "context_length": len(multi_turn_chat_client.context[:-1]),
+                            "context": multi_turn_chat_client.context[:-1],
+                            "response": response,
+                            "ttft": first_token_time - start_time
+                            if first_token_time
+                            else None,
+                            "tps": token_count / (end_time - start_time),
+                            "total_time": end_time - start_time,
+                        }
+                    )
                     await f.write(json_string + "\n")
 
-            stats.append({
-                "session": session_id,
-                "query": query_id,
-                "ttft": first_token_time - start_time if first_token_time else None,
-                "tps": token_count,
-                "success": True,
-                "total_time": end_time - start_time,
-                "code": 200,
-            })
+            stats.append(
+                {
+                    "session": session_id,
+                    "query": query_id,
+                    "ttft": first_token_time - start_time if first_token_time else None,
+                    "tps": token_count,
+                    "success": True,
+                    "total_time": end_time - start_time,
+                    "code": 200,
+                }
+            )
 
         except Exception as e:
             print(f"Error in session {session_id}, query {query_id}: {e}")
             stop_event.set()
-            try:
-                code = int(e.code)
-            except Exception:
-                code = -1
 
         if pbar:
             pbar.update(1)
+
 
 async def user_session(
     session_id: int,
@@ -126,8 +133,8 @@ async def user_session(
     encoding,
     stop_event,
     pbar,
-    debug
-    ):
+    debug,
+):
     queries = []
     for _ in range(queries_per_user):
         queries.append(random.choice(text_array))
@@ -141,8 +148,9 @@ async def user_session(
         encoding,
         stop_event,
         pbar,
-        debug
+        debug,
     )
+
 
 def check_thresholds(threshold_errors, threshold_config, stats):
     for key in stats.keys():
@@ -150,11 +158,13 @@ def check_thresholds(threshold_errors, threshold_config, stats):
         threshold = threshold_config.get(key, 0)
 
         if score_value != "-" and float(score_value) < threshold:
-            threshold_errors.append({
-                "name": key,
-                "value": float(score_value),
-                "threshold": threshold,
-            })
+            threshold_errors.append(
+                {
+                    "name": key,
+                    "value": float(score_value),
+                    "threshold": threshold,
+                }
+            )
 
 
 async def async_main(args):
@@ -173,10 +183,8 @@ async def async_main(args):
 
     stop_event = asyncio.Event()
 
-    config = load_config()
     queries_per_user = args.queries_per_user
     total_queries = args.num_users * queries_per_user
-
 
     openai_client = openai.AsyncOpenAI(
         api_key=args.api_key, base_url=args.api_base if args.api_base else None
@@ -190,11 +198,15 @@ async def async_main(args):
     stats = []
 
     pbar = tqdm(total=total_queries, desc="Running queries")
-    text_array = load_single_column_csv("src/smoke/multi_turn_chat/data/queries/generic_queries_2.csv")
+    text_array = load_single_column_csv(
+        "src/smoke/multi_turn_chat/data/queries/generic_queries_2.csv"
+    )
     initial_context: List[List[dict]] = [[]]
     if args.start_with_context:
-        initial_context = load_all_json_files_in_dir("src/smoke/multi_turn_chat/data/initial_context")
-    
+        initial_context = load_all_json_files_in_dir(
+            "src/smoke/multi_turn_chat/data/initial_context"
+        )
+
     tasks = [
         asyncio.create_task(
             user_session(
@@ -231,8 +243,10 @@ async def async_main(args):
         for s in stats
         if s.get("success") and s.get("tps") is not None and s.get("total_time")
     ]
-    round_trip_stats = stats_summary([s["total_time"] for s in stats if s.get("success") and s.get("total_time")], "Round trip (s)")
-
+    round_trip_stats = stats_summary(
+        [s["total_time"] for s in stats if s.get("success") and s.get("total_time")],
+        "Round trip (s)",
+    )
 
     total_tokens = sum(s["tps"] for s in stats if s.get("success"))
     total_duration = sum(s["total_time"] for s in stats if s.get("success"))
@@ -246,14 +260,18 @@ async def async_main(args):
         stats_summary(per_query_tps, "Tokens/sec (Per Query)"),
         round_trip_stats,
     ]
-    
+
     errors = [s for s in stats if not s.get("success") and s.get("error")]
 
     print("\n--- MULTI TURN CHAT REPORT ---")
     print(f"Total Queries: {total}")
     print(f"Successful Queries: {successes}")
     print(f"Failed Queries: {failures}")
-    print(tabulate(metrics_table, headers=["Metric", "Mean", "P50", "P90"], tablefmt="grid"))
+    print(
+        tabulate(
+            metrics_table, headers=["Metric", "Mean", "P50", "P90"], tablefmt="grid"
+        )
+    )
 
     print(
         f"\nGlobal Throughput: {global_tps:.2f} tokens/sec across {total_duration:.2f} seconds"
@@ -264,6 +282,7 @@ async def async_main(args):
         print("\n--- FIRST ERROR ---")
         print(f"Session {errors[0]['session']} - Query {errors[0]['query']}")
         print(f"Error: {errors[0]['error']}")
+
 
 def main():
     parser = argparse.ArgumentParser(description="Async OpenAI Query Benchmark")

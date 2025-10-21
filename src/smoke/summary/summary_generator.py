@@ -3,6 +3,7 @@ import asyncio
 from ..mistral_client import MistralClient
 import openai
 
+
 class SummaryGenerator:
     def __init__(self, openai_client: openai.AsyncClient, summarization_config: dict):
         """
@@ -15,7 +16,9 @@ class SummaryGenerator:
         self.mistral_client = MistralClient(summarization_config)
         self.config = summarization_config
 
-    async def generate(self, model_name: str, text: str, stop_event: asyncio.Event) -> tuple[str, float]:
+    async def generate(
+        self, model_name: str, text: str, stop_event: asyncio.Event
+    ) -> tuple[str, float]:
         """
         Generates a summary using the specified model.
 
@@ -25,7 +28,9 @@ class SummaryGenerator:
         :return: The generated summary as a string.
         """
         system_prompt = self.config.get("system_prompt_template")
-        user_prompt = self.config.get("user_prompt_template", "{text}").replace("{text}", text)
+        user_prompt = self.config.get("user_prompt_template", "{text}").replace(
+            "{text}", text
+        )
 
         first_token_time = None
         if "mistral" in model_name.lower():
@@ -35,16 +40,12 @@ class SummaryGenerator:
                     [
                         {
                             "role": "system",
-                            "content": {
-                                "type": "text", "text": system_prompt
-                            }
+                            "content": {"type": "text", "text": system_prompt},
                         },
                         {
                             "role": "user",
-                            "content": {
-                                "type": "text", "text": user_prompt
-                            }
-                        }
+                            "content": {"type": "text", "text": user_prompt},
+                        },
                     ],
                     self.config.get("temperature", 0.1),
                     self.config.get("top_p", 0.01),
@@ -58,9 +59,16 @@ class SummaryGenerator:
                 stream = await self.openai_client.chat.completions.create(
                     model=model_name,
                     messages=[
-                        {"role": "system", "content": self.config.get("system_prompt_template")},
-                        {"role": "user",
-                         "content": self.config.get("user_prompt_template", "{text}").replace("{text}", text)},
+                        {
+                            "role": "system",
+                            "content": self.config.get("system_prompt_template"),
+                        },
+                        {
+                            "role": "user",
+                            "content": self.config.get(
+                                "user_prompt_template", "{text}"
+                            ).replace("{text}", text),
+                        },
                     ],
                     temperature=self.config.get("temperature", 0.1),
                     top_p=self.config.get("top_p", 0.01),

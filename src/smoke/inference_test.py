@@ -112,7 +112,6 @@ class ResultRecord(BaseModel):
             warnings.warn("Warning: 'generated_text' is optional but empty or missing.")
         return v
 
-
     def model_dump_json(self, **kwargs):
         """Dump the model to a JSON string, excluding None values."""
         return super().model_dump(exclude_none=True, **kwargs).to_json()
@@ -164,9 +163,7 @@ class OutputBuilder:
             api_base: The API base URL.
             output_dir: The directory to save the output file.
         """
-        self.output_filename = build_output_filename(
-            api_base, model_name, feature_name
-        )
+        self.output_filename = build_output_filename(api_base, model_name, feature_name)
         if output_dir:
             self.output_path = os.path.join(output_dir, self.output_filename)
             os.makedirs(output_dir, exist_ok=True)
@@ -381,12 +378,12 @@ async def run_query(
         if not generated_text:
             is_batch = True
             completion = await openai_client.chat.completions.create(
-                    model=model_name,
-                    messages=messages,
-                    stream=False,
-                    max_tokens=max_tokens,
-                    temperature=temperature,
-                )
+                model=model_name,
+                messages=messages,
+                stream=False,
+                max_tokens=max_tokens,
+                temperature=temperature,
+            )
             if completion.choices:
                 generated_text = completion.choices[0].message.content
             if completion.usage:
@@ -402,7 +399,9 @@ async def run_query(
         total_tokens = -1
 
         if usage_exists:
-            prompt_tokens = usage.prompt_tokens if usage.prompt_tokens is not None else -1
+            prompt_tokens = (
+                usage.prompt_tokens if usage.prompt_tokens is not None else -1
+            )
             completion_tokens = (
                 usage.completion_tokens if usage.completion_tokens is not None else -1
             )
@@ -417,9 +416,7 @@ async def run_query(
                 tokenizer.encode(user_content)
             )
             computed_completion_tokens = len(tokenizer.encode(generated_text))
-            computed_total_tokens = (
-                computed_prompt_tokens + computed_completion_tokens
-            )
+            computed_total_tokens = computed_prompt_tokens + computed_completion_tokens
 
         tokens_for_tps = (
             completion_tokens
@@ -433,9 +430,7 @@ async def run_query(
         )
 
         tps = (
-            tokens_for_tps / total_time
-            if total_time > 0 and tokens_for_tps > 0
-            else 0
+            tokens_for_tps / total_time if total_time > 0 and tokens_for_tps > 0 else 0
         )
         total_tps = (
             total_tokens_for_tps / total_time
@@ -479,9 +474,7 @@ async def run_query(
                 generation_tokens=completion_tokens,
                 total_tokens=total_tokens,
                 latency_sec=total_time,
-                ttft_sec=first_token_time - start_time
-                if first_token_time
-                else None,
+                ttft_sec=first_token_time - start_time if first_token_time else None,
                 tokens_per_second=tps,
                 total_tps=total_tps,
                 success=True,
@@ -666,9 +659,7 @@ async def async_main(args: argparse.Namespace) -> int:
     ]
     per_query_tps = [s["tps"] for s in stats if s.get("success") and s.get("tps")]
     total_tps = [
-        s["total_tps"]
-        for s in stats
-        if s.get("success") and s.get("total_tps")
+        s["total_tps"] for s in stats if s.get("success") and s.get("total_tps")
     ]
 
     total_output_tokens = sum(

@@ -37,6 +37,7 @@ class ModelConfig(BaseModel):
         n_ctx (int): The context size (window) for the model.
         truncate (bool): Whether to truncate context if it exceeds the model's window.
     """
+
     tokenizer_type: str = "tiktoken"
     tokenizer: Optional[str] = None
     n_ctx: int = 8192
@@ -212,7 +213,7 @@ async def run_quick_test(
         "tps": 0.0,
         "time duration": 0.0,
         "success": False,
-        "error": None
+        "error": None,
     }
     try:
         vendor_config = get_vendor_config(vendor, main_config)
@@ -250,10 +251,13 @@ async def run_quick_test(
 
         total_time = time.time() - start_time
 
-        if not usage and not generated_text: # Fallback for non-streaming
+        if not usage and not generated_text:  # Fallback for non-streaming
             completion = await client.chat.completions.create(
-                model=model_name, messages=final_messages, stream=False,
-                max_tokens=max_tokens, temperature=temperature
+                model=model_name,
+                messages=final_messages,
+                stream=False,
+                max_tokens=max_tokens,
+                temperature=temperature,
             )
             if completion.choices:
                 generated_text = completion.choices[0].message.content or ""
@@ -262,12 +266,14 @@ async def run_quick_test(
 
         tps = (usage.completion_tokens / total_time) if usage and total_time > 0 else 0
 
-        result.update({
-            "success": True,
-            "output": generated_text,
-            "time duration": total_time,
-            "tps": tps,
-        })
+        result.update(
+            {
+                "success": True,
+                "output": generated_text,
+                "time duration": total_time,
+                "tps": tps,
+            }
+        )
     except Exception as e:
         error_message = str(e)
         result["error"] = error_message
@@ -298,7 +304,11 @@ async def async_main(args: argparse.Namespace):
     main_config = load_config(main_config_path)
     quick_test_config = load_config(args.config)
 
-    delay = args.delay if args.delay is not None else quick_test_config.get("delay_between_requests_sec", 0.2)
+    delay = (
+        args.delay
+        if args.delay is not None
+        else quick_test_config.get("delay_between_requests_sec", 0.2)
+    )
 
     prompt_vars = quick_test_config.get("prompt_variables", {})
 
@@ -319,8 +329,12 @@ async def async_main(args: argparse.Namespace):
     for vendor, model in tests_to_run:
         task = asyncio.create_task(
             run_quick_test(
-                vendor, model, final_messages, quick_test_config["max_tokens"],
-                quick_test_config["temperature"], main_config
+                vendor,
+                model,
+                final_messages,
+                quick_test_config["max_tokens"],
+                quick_test_config["temperature"],
+                main_config,
             )
         )
         tasks.append(task)
@@ -338,12 +352,12 @@ async def async_main(args: argparse.Namespace):
     csv_headers = ["vendor", "model", "input", "output", "tps", "time duration"]
 
     with open(csv_filename, "w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=csv_headers, extrasaction='ignore')
+        writer = csv.DictWriter(f, fieldnames=csv_headers, extrasaction="ignore")
         writer.writeheader()
         for res in sorted(results, key=lambda r: (r["vendor"], r["model"])):
             res_to_write = res.copy()
-            res_to_write['tps'] = f"{res.get('tps', 0.0):.2f}"
-            res_to_write['time duration'] = f"{res.get('time duration', 0.0):.2f}"
+            res_to_write["tps"] = f"{res.get('tps', 0.0):.2f}"
+            res_to_write["time duration"] = f"{res.get('time duration', 0.0):.2f}"
             writer.writerow(res_to_write)
 
     print(f"\nResults saved to {csv_filename}")
@@ -352,7 +366,9 @@ async def async_main(args: argparse.Namespace):
     summary_headers = ["Vendor", "Model", "Success", "TPS", "Time (s)", "Error"]
     table = [
         [
-            r["vendor"], r["model"], "✅" if r["success"] else "❌",
+            r["vendor"],
+            r["model"],
+            "✅" if r["success"] else "❌",
             f"{r.get('tps', 0):.2f}" if r["success"] else "-",
             f"{r.get('time duration', 0):.2f}" if r["success"] else "-",
             r.get("error", ""),
