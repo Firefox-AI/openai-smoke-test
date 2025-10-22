@@ -1,17 +1,34 @@
 import json
 import random
 import uuid
+import os
+import tiktoken
 
 """
 Convert `messages: [{"role": "user"/"assistant"/"tool"/"system", "content": "..."}]`
 into `input: "..."`, `delay: int` format for GenAI performance test.
 Skips null content messages.
 
-Open question: Do we include the system prompt in a separate input element? Or prefix it to the first user message?
+Open questions: 
+1. Do we include the system prompt in a separate input element? Or prefix it to the first user message?
+2. Do we want to include delay?
 """
 
+# add delay
+ADD_DELAY = False
+ADD_TEXT = True
 
-def convert_json_format(data, output_path):
+
+def get_next_assistant_message(conversation, start_index):
+    for i in range(start_index + 1, len(conversation["messages"])):
+        message = conversation["messages"][i]
+        if message["role"] == "assistant" and message["content"] is not None:
+            return message["content"]
+    return None
+
+
+def convert_for_genai_perf_test_with_text(data, output_path):
+    encoding = tiktoken.get_encoding("cl100k_base")
     converted_data = []
     for conversation in data:
         id = uuid.uuid4().hex
@@ -21,9 +38,15 @@ def convert_json_format(data, output_path):
                 "session_id": id,
                 "text": first_prompt["content"],
             }
+            if not ADD_TEXT:
+                del new_item["text"]
+                new_item["input_length"] = len(encoding.encode(first_prompt["content"]))
+                new_item["output_length"] = random.randint(50, 200)
             converted_data.append(new_item)
+
         for i in range(1, len(conversation["messages"])):
             message = conversation["messages"][i]
+            next_assistant_message = get_next_assistant_message(conversation, i)
             if message["role"] != "user" or message["content"] is None:
                 continue  # Skip null content messages
             is_last_message_in_conversation = i == len(conversation["messages"]) - 1
@@ -33,7 +56,16 @@ def convert_json_format(data, output_path):
                 "delay": random.randint(2000, 20000),  # 2 to 20 seconds
                 "text": message["content"],
             }
-            if is_last_message_in_conversation:
+            if not ADD_TEXT:
+                del new_item["text"]
+                new_item["input_length"] = len(encoding.encode(message["content"]))
+                new_item["output_length"] = (
+                    len(encoding.encode(next_assistant_message))
+                    if next_assistant_message
+                    else random.randint(50, 200)
+                )
+
+            if not ADD_DELAY or is_last_message_in_conversation:
                 del new_item["delay"]
             converted_data.append(new_item)
 
@@ -43,18 +75,26 @@ def convert_json_format(data, output_path):
             outfile.write(json_line + "\n")
 
 
-# Example usage
 if __name__ == "__main__":
     datasets = [
-        "../multi_turn_chat/data/generated_goldenfox_dataset_500_min_2000tokens.jsonl_truncated_at_11000.jsonl",
-        "../multi_turn_chat/data/generated_goldenfox_dataset_500_min_2000tokens_long_response.jsonl_truncated_at_11000.jsonl",
-        "../multi_turn_chat/data/generated_goldenfox_dataset_500_min_5000tokens.jsonl_truncated_at_11000.jsonl",
-        "../multi_turn_chat/data/generated_goldenfox_dataset_500_min_5000tokens_long_response.jsonl_truncated_at_11000.jsonl",
+        "../../multi_turn_chat/data/generated_goldenfox_dataset_500_min_2000tokens.jsonl_truncated_at_11000.jsonl",
+        "../../multi_turn_chat/data/generated_goldenfox_dataset_500_min_2000tokens_long_response.jsonl_truncated_at_11000.jsonl",
+        "../../multi_turn_chat/data/generated_goldenfox_dataset_500_min_5000tokens.jsonl_truncated_at_11000.jsonl",
+        "../../multi_turn_chat/data/generated_goldenfox_dataset_500_min_5000tokens_long_response.jsonl_truncated_at_11000.jsonl",
     ]
     for dataset_path in datasets:
         with open(dataset_path, "r") as f:
             dataset = [json.loads(line) for line in f.readlines()]
-            convert_json_format(
+            if ADD_TEXT:
+                output_dir = "./genai-perf-dataset-with-text"
+            else:
+                output_dir = "./genai-perf-dataset-with-lengths"
+            os.makedirs(output_dir, exist_ok=True)
+            original_file_name = os.path.basename(dataset_path)
+            output_path = os.path.join(
+                output_dir, original_file_name + "_genai_perf_converted.jsonl"
+            )
+            convert_for_genai_perf_test_with_text(
                 dataset,
-                dataset_path.replace(".jsonl", "") + "_genai_perf_converted.jsonl",
+                output_path,
             )
