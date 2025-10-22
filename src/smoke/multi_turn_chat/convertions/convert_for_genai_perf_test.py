@@ -9,7 +9,7 @@ Convert `messages: [{"role": "user"/"assistant"/"tool"/"system", "content": "...
 into `input: "..."`, `delay: int` format for GenAI performance test.
 Skips null content messages.
 
-Open questions: 
+Open questions:
 1. Do we include the system prompt in a separate input element? Or prefix it to the first user message?
 2. Do we want to include delay?
 """
