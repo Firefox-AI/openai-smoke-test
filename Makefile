@@ -21,5 +21,9 @@ lint:
 smoke:
 	$(VENV)/bin/openai-smoketest
 
+# usage example make stress-mlpa host="localhost:8000"
+stress-mlpa:
+	$(VENV)/bin/locust -f src/stress/locusfiles/mlpa.py --host=$(host)
+
 clean:
 	rm -rf __pycache__ .cache $(VENV)
