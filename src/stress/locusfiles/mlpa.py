@@ -69,7 +69,7 @@ class MLPAUser(HttpUser):
             "x-fxa-authorization": f"Bearer {self.fxa_token}",
         }
 
-        endpoint = "/mock/chat/mock_completions"
+        endpoint = "/mock/chat/completions"
         return self.client.post(
             endpoint, json=payload, headers=headers, catch_response=True
         )
@@ -103,5 +103,5 @@ class MLPAUser(HttpUser):
 
     @task(1)
     def health_check(self):
-        with self.client.get("/health", catch_response=True) as response:
+        with self.client.get("/health/liveness", catch_response=True) as response:
             self._handle_response(response, "Health Check")
