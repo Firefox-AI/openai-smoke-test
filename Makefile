@@ -21,9 +21,17 @@ lint:
 smoke:
 	$(VENV)/bin/openai-smoketest
 
-# usage example make stress-mlpa host="localhost:8000"
+# usage example make stress-mlpa host="http://0.0.0.0:8080"
 stress-mlpa:
 	$(VENV)/bin/locust -f src/stress/locusfiles/mlpa.py --host=$(host)
+
+# usage example: make generate-fxa-users n-users=5 env=prod
+generate-fxa-users:
+	$(VENV)/bin/python src/stress/generate_test_fxa_users.py create-tokens --n-users $(n-users) --env $(env)
+
+# usage example: make refresh-fxa-users
+refresh-fxa-users:
+	$(VENV)/bin/python src/stress/generate_test_fxa_users.py refresh-tokens
 
 clean:
 	rm -rf __pycache__ .cache $(VENV)

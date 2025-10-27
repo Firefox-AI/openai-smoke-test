@@ -9,4 +9,4 @@ creds.json
 uv.lock
 .venv
 .ruff_cache
-tokens.json
+users.json

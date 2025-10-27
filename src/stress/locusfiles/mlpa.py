@@ -26,26 +26,26 @@ TEST_MESSAGES = [
     "Write a haiku about programming",
 ]
 
-TOKEN_FILE = os.getenv("TOKEN_FILE", "tokens.json")
+USER_FILE = os.getenv("USER_FILE", "users.json")
 
-if not os.path.exists(TOKEN_FILE):
-    raise FileNotFoundError(f"Token file not found: {TOKEN_FILE}")
+if not os.path.exists(USER_FILE):
+    raise FileNotFoundError(f"User file not found: {USER_FILE}")
 
-with open(TOKEN_FILE) as f:
-    TOKENS = json.load(f)
+with open(USER_FILE) as f:
+    USERS = json.load(f)
 
-if not isinstance(TOKENS, list) or not all(isinstance(t, str) for t in TOKENS):
-    raise ValueError("tokens.json must be a JSON array of strings")
+if not isinstance(USERS, list) or not all("token" in u for u in USERS):
+    raise ValueError("users.json must be a list of objects containing a 'token' field")
 
-TOKEN_CYCLE = cycle(TOKENS)
+USER_CYCLE = cycle(USERS)
 
 
 class MLPAUser(HttpUser):
     wait_time = between(WAIT_TIME_MIN, WAIT_TIME_MAX)
 
     def on_start(self):
-        self.user_id = f"test-user-{random.randint(1000, 9999)}"
-        self.fxa_token = next(TOKEN_CYCLE)
+        user_data = next(USER_CYCLE)
+        self.fxa_token = user_data.get("token")
 
     def _make_chat_request(
         self,
@@ -69,7 +69,7 @@ class MLPAUser(HttpUser):
             "x-fxa-authorization": f"Bearer {self.fxa_token}",
         }
 
-        endpoint = "/mock/chat/completions"
+        endpoint = "/mock/v1/chat/completions"
         return self.client.post(
             endpoint, json=payload, headers=headers, catch_response=True
         )
@@ -77,7 +77,6 @@ class MLPAUser(HttpUser):
     def _handle_response(self, response, request_type: str):
         if response.status_code == 200:
             response.success()
-            print(f"{request_type} Success: {response.elapsed.total_seconds():.3f}s")
         elif response.status_code == 401:
             response.failure("Authentication failed - check FxA token")
         elif response.status_code == 403:
