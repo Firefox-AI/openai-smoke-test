@@ -20,8 +20,7 @@ ADD_TEXT = True
 
 
 def get_next_assistant_message(conversation, start_index):
-    for i in range(start_index + 1, len(conversation["messages"])):
-        message = conversation["messages"][i]
+    for message in conversation["messages"][start_index:]:
         if message["role"] == "assistant" and message["content"] is not None:
             return message["content"]
     return None
@@ -31,11 +30,11 @@ def convert_for_genai_perf_test_with_text(data, output_path):
     encoding = tiktoken.get_encoding("cl100k_base")
     converted_data = []
     for conversation in data:
-        id = uuid.uuid4().hex
+        session_id = uuid.uuid4().hex
         first_prompt = conversation["messages"][0]
         if first_prompt["role"] == "system" and first_prompt["content"] is not None:
             new_item = {
-                "session_id": id,
+                "session_id": session_id,
                 "text": first_prompt["content"],
             }
             if not ADD_TEXT:
@@ -51,7 +50,7 @@ def convert_for_genai_perf_test_with_text(data, output_path):
                 continue  # Skip null content messages
             is_last_message_in_conversation = i == len(conversation["messages"]) - 1
             new_item = {
-                "session_id": id,
+                "session_id": session_id,
                 # delay: simulate time between user sending messages (ms)
                 "delay": random.randint(2000, 20000),  # 2 to 20 seconds
                 "text": message["content"],
@@ -76,12 +75,13 @@ def convert_for_genai_perf_test_with_text(data, output_path):
 
 
 if __name__ == "__main__":
+    data_dir = "../../multi_turn_chat/data"
     datasets = [
-        "../../multi_turn_chat/data/generated_goldenfox_dataset_500_min_2000tokens.jsonl_truncated_at_11000.jsonl",
-        "../../multi_turn_chat/data/generated_goldenfox_dataset_500_min_2000tokens_long_response.jsonl_truncated_at_11000.jsonl",
-        "../../multi_turn_chat/data/generated_goldenfox_dataset_500_min_5000tokens.jsonl_truncated_at_11000.jsonl",
-        "../../multi_turn_chat/data/generated_goldenfox_dataset_500_min_5000tokens_long_response.jsonl_truncated_at_11000.jsonl",
+        os.path.join(data_dir, fname)
+        for fname in os.listdir(data_dir)
+        if fname.endswith(".jsonl") or fname.endswith(".jsonl")
     ]
+    print(datasets)
     for dataset_path in datasets:
         with open(dataset_path, "r") as f:
             dataset = [json.loads(line) for line in f.readlines()]
