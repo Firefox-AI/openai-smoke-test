@@ -228,6 +228,12 @@ and then you will need to refresh tokens before running load test, since they ex
 make refresh-fxa-users
 ```
 
+Please delete users after your tests
+
+```bash
+make delete-fxa-users
+```
+
 ## Running load test with [Locust](https://github.com/locustio/locust)
 see the `src/stress/locusfiles/mlpa.py` for details
 

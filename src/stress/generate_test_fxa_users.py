@@ -140,5 +140,47 @@ def refresh_tokens():
     logging.info(f"Refreshed {len(users)} tokens for env={env}")
 
 
+@app.command("delete-users")
+def users_cleanup():
+    if not USERS_FILE.exists():
+        logging.error("users.json not found")
+        raise typer.Exit(1)
+
+    users = json.loads(USERS_FILE.read_text())
+
+    if not users:
+        logging.error("users.json is empty")
+        raise typer.Exit(1)
+
+    env = users[0].get("env")
+    if env not in {"prod", "stage"}:
+        logging.error("invalid or missing env in users.json")
+        raise typer.Exit(1)
+
+    fxa_base, _ = get_env_urls(env)
+    client = Client(fxa_base)
+    removed = 0
+
+    with Progress(
+        TextColumn("[progress.description]{task.description}"),
+        BarColumn(),
+        TextColumn("{task.completed}/{task.total}"),
+        TimeElapsedColumn(),
+    ) as progress:
+        task = progress.add_task("Deleting FxA users", total=len(users))
+        for u in users:
+            try:
+                acct = TestEmailAccount(u["email"])
+                acct.clear()
+                client.destroy_account(u["email"], u["password"])
+                removed += 1
+            except Exception:
+                pass
+            progress.advance(task)
+
+    USERS_FILE.unlink(missing_ok=True)
+    logging.info(f"Deleted {removed} users from FxA and removed users.json")
+
+
 if __name__ == "__main__":
     app()

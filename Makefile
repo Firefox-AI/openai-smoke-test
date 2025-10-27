@@ -33,5 +33,9 @@ generate-fxa-users:
 refresh-fxa-users:
 	$(VENV)/bin/python src/stress/generate_test_fxa_users.py refresh-tokens
 
+# usage example: make delete-fxa-users
+delete-fxa-users:
+	$(VENV)/bin/python src/stress/generate_test_fxa_users.py delete-users
+
 clean:
 	rm -rf __pycache__ .cache $(VENV)
