@@ -58,6 +58,7 @@ dependencies = [
     "jiter==0.10.0",
     "joblib==1.5.1",
     "kiwisolver==1.4.9",
+    "locust>=2.42.0",
     "markdown-it-py==4.0.0",
     "MarkupSafe==3.0.2",
     "matplotlib==3.10.5",
@@ -85,6 +86,7 @@ dependencies = [
     "pycryptodomex==3.23.0",
     "pydantic==2.11.7",
     "pydantic_core==2.33.2",
+    "pyfxa>=0.8.1",
     "Pygments==2.19.2",
     "pyparsing==3.2.3",
     "pyppmd==1.2.0",
@@ -121,7 +123,6 @@ dependencies = [
     "wcwidth==0.2.13",
     "xxhash==3.5.0",
     "yarl==1.20.1",
-
 ]
 
 [dependency-groups]
