@@ -1,3 +1,4 @@
+from pathlib import Path
 import random
 import json
 import os
@@ -26,12 +27,12 @@ for conv in dataset["conversation"]:
         TEST_CONVERSATIONS.append(
             [{"role": role, "content": content} for role, content in combined.items()]
         )
-USER_FILE = os.getenv("USER_FILE", "users.json")
+USERS_FILE = Path(__file__).parent.resolve() / "users.json"
 
-if not os.path.exists(USER_FILE):
-    raise FileNotFoundError(f"User file not found: {USER_FILE}")
+if not os.path.exists(USERS_FILE):
+    raise FileNotFoundError(f"User file not found: {USERS_FILE}")
 
-with open(USER_FILE) as f:
+with open(USERS_FILE) as f:
     USERS = json.load(f)
 
 if not isinstance(USERS, list) or not all("token" in u for u in USERS):

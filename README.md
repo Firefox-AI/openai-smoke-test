@@ -136,43 +136,43 @@ Overall Score: --- mistral-small-2503: 0.67 ---
 
 This table details the configuration options for the summarization and evaluation script, managed in `config.yaml`.
 
-Parameter                               | Type          | Description                                                                                                                                                           | Default Value
-:-------------------------------------- | :------------ | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :-----------------------------
-**Summarization**                       |               |                                                                                                                                                                       |
-`use_dataset`                           | `bool`        | If true, uses the Hugging Face dataset defined at `dataset_name`. Otherwise the smoke test is ran on randomly generated lorem ipsum.                                  | `false`
-`log_stats`                             | `bool`        | If true, iterates through the entire dataset and logs scores to `src/smoke/stats/summary/<model_name>.jsonl`. If false, be sure to pass `--queries-per-user` argument | `false`
-`dataset_name`                          | `str`         | Hugging Face dataset to load from the Mozilla organization.                                                                                                           | `"page-summarization-eval"`
-`system_prompt_template`                | `str`         | The system prompt that instructs the model on how to summarize.                                                                                                       | `"You are an expert..."`
-`user_prompt_template`                  | `str`         | The user prompt containing the `{text}` placeholder for the article.                                                                                                  | `"Summarize the following..."`
-`temperature`                           | `float`       | Controls the randomness of the model's output. Lower is more deterministic.                                                                                           | `0.1`
-`top_p`                                 | `float`       | Controls nucleus sampling for the model's output.                                                                                                                     | `0.01`
-`max_completion_tokens`                 | `int or null` | Max completion tokens for summarization.                                                                                                                              | `null`
-`error_on_threshold_fails`              | `bool`        | If true, throws an error if any threshold check fails                                                                                                                 | `false`
-`stream`                                | `bool`        | If true, streams the response to track Time To First Token (TTFT).                                                                                                    | `true`
-`service_account_file`                  | `str`         | Path to the Google Cloud service account file for Mistral authentication.                                                                                             | `"creds.json"`
-**Performance Thresholds**              |               |                                                                                                                                                                       |
-`metric_threshold.ttft`                 | `float`       | Max allowed Time To First Token in seconds (lower is better).                                                                                                         | `1.0`
-`metric_threshold.per_query_tps`        | `int`         | Min required Tokens Per Second (higher is better).                                                                                                                    | `100`
-`metric_threshold.round_trip`           | `float`       | Max allowed total request time in seconds (lower is better).                                                                                                          | `2.5`
-**Quality Score Thresholds**            |               |                                                                                                                                                                       |
-`score_threshold.rouge.rouge1`          | `float`       | Minimum required ROUGE-1 score.                                                                                                                                       | `0.3`
-`score_threshold.rouge.rouge2`          | `float`       | Minimum required ROUGE-2 score.                                                                                                                                       | `0.2`
-`score_threshold.rouge.rougeLsum`       | `float`       | Minimum required ROUGE-Lsum score.                                                                                                                                    | `0.25`
-`score_threshold.bleu`                  | `float`       | Minimum required BLEU score.                                                                                                                                          | `0.1`
-`score_threshold.unieval.consistency`   | `float`       | Minimum required UniEval consistency score.                                                                                                                           | `0.9`
-`score_threshold.unieval.coherence`     | `float`       | Minimum required UniEval coherence score.                                                                                                                             | `0.8`
-`score_threshold.unieval.fluency`       | `float`       | Minimum required UniEval fluency score.                                                                                                                               | `0.8`
-`score_threshold.unieval.relevance`     | `float`       | Minimum required UniEval relevance score.                                                                                                                             | `0.75`
-`score_threshold.unieval.overall`       | `float`       | Minimum required UniEval overall score.                                                                                                                               | `0.85`
-`score_threshold.percentage_of_hiccups` | `float`       | Max allowed percentage of summaries with hiccups (lower is better).                                                                                                   | `0.05`
-`score_threshold.overall`               | `float`       | Minimum required final weighted score to pass the test.                                                                                                               | `0.65`
-**LLM-based Evaluation**                |               |                                                                                                                                                                       |
-`llm_unieval_scoring.score_with_llm`    | `bool`        | If true, uses an LLM to evaluate summaries instead of unieval library (not async).                                                                                    | `false`
-`llm_unieval_scoring.model_name`        | `str`         | The model name to use for LLM-based evaluation.                                                                                                                       | `"gpt-4o"`
-`llm_unieval_scoring.base_url`          | `str`         | The API endpoint for the evaluator LLM.                                                                                                                               | `"https://api.openai.com/v1/"`
-`llm_unieval_scoring.api_key`           | `str`         | The name of the environment variable holding the evaluator's API key.                                                                                                 | `LLM_UNIEVAL_SCORING_API_KEY`
-`llm_unieval_scoring.system_prompt`     | `str`         | The system prompt for the evaluator model.                                                                                                                            | `"You are a meticulous..."`
-`llm_unieval_scoring.user_prompt`       | `str`         | The user prompt for the evaluator model, defining criteria and format.                                                                                                | `"Carefully evaluate the..."`
+| Parameter                               | Type          | Description                                                                                                                                                           | Default Value                  |
+| :-------------------------------------- | :------------ | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :----------------------------- |
+| **Summarization**                       |               |                                                                                                                                                                       |
+| `use_dataset`                           | `bool`        | If true, uses the Hugging Face dataset defined at `dataset_name`. Otherwise the smoke test is ran on randomly generated lorem ipsum.                                  | `false`                        |
+| `log_stats`                             | `bool`        | If true, iterates through the entire dataset and logs scores to `src/smoke/stats/summary/<model_name>.jsonl`. If false, be sure to pass `--queries-per-user` argument | `false`                        |
+| `dataset_name`                          | `str`         | Hugging Face dataset to load from the Mozilla organization.                                                                                                           | `"page-summarization-eval"`    |
+| `system_prompt_template`                | `str`         | The system prompt that instructs the model on how to summarize.                                                                                                       | `"You are an expert..."`       |
+| `user_prompt_template`                  | `str`         | The user prompt containing the `{text}` placeholder for the article.                                                                                                  | `"Summarize the following..."` |
+| `temperature`                           | `float`       | Controls the randomness of the model's output. Lower is more deterministic.                                                                                           | `0.1`                          |
+| `top_p`                                 | `float`       | Controls nucleus sampling for the model's output.                                                                                                                     | `0.01`                         |
+| `max_completion_tokens`                 | `int or null` | Max completion tokens for summarization.                                                                                                                              | `null`                         |
+| `error_on_threshold_fails`              | `bool`        | If true, throws an error if any threshold check fails                                                                                                                 | `false`                        |
+| `stream`                                | `bool`        | If true, streams the response to track Time To First Token (TTFT).                                                                                                    | `true`                         |
+| `service_account_file`                  | `str`         | Path to the Google Cloud service account file for Mistral authentication.                                                                                             | `"creds.json"`                 |
+| **Performance Thresholds**              |               |                                                                                                                                                                       |
+| `metric_threshold.ttft`                 | `float`       | Max allowed Time To First Token in seconds (lower is better).                                                                                                         | `1.0`                          |
+| `metric_threshold.per_query_tps`        | `int`         | Min required Tokens Per Second (higher is better).                                                                                                                    | `100`                          |
+| `metric_threshold.round_trip`           | `float`       | Max allowed total request time in seconds (lower is better).                                                                                                          | `2.5`                          |
+| **Quality Score Thresholds**            |               |                                                                                                                                                                       |
+| `score_threshold.rouge.rouge1`          | `float`       | Minimum required ROUGE-1 score.                                                                                                                                       | `0.3`                          |
+| `score_threshold.rouge.rouge2`          | `float`       | Minimum required ROUGE-2 score.                                                                                                                                       | `0.2`                          |
+| `score_threshold.rouge.rougeLsum`       | `float`       | Minimum required ROUGE-Lsum score.                                                                                                                                    | `0.25`                         |
+| `score_threshold.bleu`                  | `float`       | Minimum required BLEU score.                                                                                                                                          | `0.1`                          |
+| `score_threshold.unieval.consistency`   | `float`       | Minimum required UniEval consistency score.                                                                                                                           | `0.9`                          |
+| `score_threshold.unieval.coherence`     | `float`       | Minimum required UniEval coherence score.                                                                                                                             | `0.8`                          |
+| `score_threshold.unieval.fluency`       | `float`       | Minimum required UniEval fluency score.                                                                                                                               | `0.8`                          |
+| `score_threshold.unieval.relevance`     | `float`       | Minimum required UniEval relevance score.                                                                                                                             | `0.75`                         |
+| `score_threshold.unieval.overall`       | `float`       | Minimum required UniEval overall score.                                                                                                                               | `0.85`                         |
+| `score_threshold.percentage_of_hiccups` | `float`       | Max allowed percentage of summaries with hiccups (lower is better).                                                                                                   | `0.05`                         |
+| `score_threshold.overall`               | `float`       | Minimum required final weighted score to pass the test.                                                                                                               | `0.65`                         |
+| **LLM-based Evaluation**                |               |                                                                                                                                                                       |
+| `llm_unieval_scoring.score_with_llm`    | `bool`        | If true, uses an LLM to evaluate summaries instead of unieval library (not async).                                                                                    | `false`                        |
+| `llm_unieval_scoring.model_name`        | `str`         | The model name to use for LLM-based evaluation.                                                                                                                       | `"gpt-4o"`                     |
+| `llm_unieval_scoring.base_url`          | `str`         | The API endpoint for the evaluator LLM.                                                                                                                               | `"https://api.openai.com/v1/"` |
+| `llm_unieval_scoring.api_key`           | `str`         | The name of the environment variable holding the evaluator's API key.                                                                                                 | `LLM_UNIEVAL_SCORING_API_KEY`  |
+| `llm_unieval_scoring.system_prompt`     | `str`         | The system prompt for the evaluator model.                                                                                                                            | `"You are a meticulous..."`    |
+| `llm_unieval_scoring.user_prompt`       | `str`         | The user prompt for the evaluator model, defining criteria and format.                                                                                                | `"Carefully evaluate the..."`  |
 
 ## How to run stress test
 
@@ -199,7 +199,9 @@ python src/smoke/stress_test.py --test-config src/smoke/stress-test.yaml --featu
 ```
 
 # [MLPA](https://github.com/Firefox-AI/MLPA) Load testing
+
 [MLPA](https://github.com/Firefox-AI/MLPA) is a proxy gateway API that depends on 3 components:
+
 1. [FXA](github.com/mozilla/PyFxA) - Mozilla's authorization mechanism
 2. Postgres Database
 3. LLM proxy service (LiteLLM or in the future AnyLLM-gateway or other similar services)
@@ -207,42 +209,38 @@ python src/smoke/stress_test.py --test-config src/smoke/stress-test.yaml --featu
 The goal of the load test is to stress the production deployment with the traffic pattern and the load that we expect to see in production (the rule of thumb is usually 3x load on the load test peak traffic) to check for potential bottlenecks, assure that scalability is configured correctly, assured that we have adequate infrastructure in place.
 
 ## Partial mocking
+
 We would like to mock the LiteLLM calls to the real LLM providers in order to save costs on the actual reply generation from LLM - since it is not the goal of the MLPA's load test, for that we are using `/mock/` router, for example instead of `/v1/chat/completions` we are calling `mock/v1/chat/completions`, which internally mocks the LLM calls.
 
 Another mocking might happen when we would like to mock calls to the Mozilla's auth service.
 
-The [PyFXa](github.com/mozilla/PyFxA) works in the way that validation is happening locally in case when token is cached or JWT token is decrypted or else library is having a [fallback](https://github.com/mozilla/PyFxA/blob/d3040bfaa6d413bff63b689590287a3198fff1ef/fxa/oauth.py#L271) to calling FXA servers.  In order to avoid these calls we can use endpoint
+The [PyFXa](github.com/mozilla/PyFxA) works in the way that validation is happening locally in case when token is cached or JWT token is decrypted or else library is having a [fallback](https://github.com/mozilla/PyFxA/blob/d3040bfaa6d413bff63b689590287a3198fff1ef/fxa/oauth.py#L271) to calling FXA servers. In order to avoid these calls we can use endpoint
 `mock/v1/chat/completions_no_auth` - this endpoint is not calling FXA server in the case of fallbacks.
 
 ## Virtual users and authentication
-In order to simulate the production traffic pattern we need to use multiple parallel users, since our users need to have valid token, we need to create `users.json` file. You can find a script in `src/stress/generate_test_fxa_users.py`
 
-```bash
-make generate-fxa-users n-users=5 env=prod
-```
-this needs to be done once
+Below is a comparison of how to set up virtual users and authentication for **FxA** and **AppAttest**:
 
-and then you will need to refresh tokens before running load test, since they expire pretty often
+| FxA (Firefox Accounts)                                                                    | AppAttest                                                                                   |
+| ----------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| To simulate production traffic, create multiple parallel users with valid tokens.         | To simulate production traffic, create multiple parallel users with valid AppAttest tokens. |
+| Generate test users using the script in `src/stress/mlpa/fxa/generate_test_fxa_users.py`: | Generate AppAttest test users using your AppAttest provisioning script or tool.             |
+|                                                                                           |                                                                                             |
+| `make generate-fxa-users n-users=5 env=prod `                                             | `make generate-appattest-users n-users=5 env=prod`                                          |
+| Run once to create users.                                                                 | Run once to create users.                                                                   |
+|                                                                                           |                                                                                             |
+| Refresh tokens before running the load test, as they expire frequently:                   |                                                                                             |
+| `make refresh-fxa-users`                                                                  |                                                                                             |
+|                                                                                           |                                                                                             |
+| Delete users after your tests:                                                            |                                                                                             |
+| `make delete-fxa-users`                                                                   |                                                                                             |
+|                                                                                           |                                                                                             |
+| **Running load test with [Locust](https://github.com/locustio/locust):**                  | **Running load test with [Locust](https://github.com/locustio/locust):**                    |
+| `make stress-mlpa-fxa host="MLPA_HOST:8000"`                                              | `make stress-mlpa-appattest host="MLPA_HOST:8000"`                                          |
 
-```bash
-make refresh-fxa-users
-```
+Adjust the commands and scripts as needed for your environment and authentication provider.
 
-Please delete users after your tests
-
-```bash
-make delete-fxa-users
-```
-
-## Running load test with [Locust](https://github.com/locustio/locust)
-see the `src/stress/locusfiles/mlpa.py` for details
-
-```bash
-make stress-mlpa host="MLPA_HOST:8000"
-```
 it will open Locust's UI where you can set the number of virtual users
-
-
 
 # Multi Turn Chat Testing
 
@@ -272,29 +270,29 @@ This script queries Google Cloud Logging to provide detailed reports on Vertex A
 
 1. **Detailed Report for a Specific Model (Default Behavior)**:
 
-  ```bash
-  python3 audit_vertexai_deployment_logs.py --search-term "the-model-name"
-  ```
+```bash
+python3 audit_vertexai_deployment_logs.py --search-term "the-model-name"
+```
 
 2. **Full Granular Report with Replica Messages**:
 
-  ```bash
-  python3 audit_vertexai_deployment_logs.py --search-term "the-model-name" --include-message
-  ```
+```bash
+python3 audit_vertexai_deployment_logs.py --search-term "the-model-name" --include-message
+```
 
 3. **High-Level Summary of All Deployments (excluding replica events)**: (Shows only deploy/undeploy events and the final uptime/cost report)
 
-  ```bash
-  python3 audit_vertexai_deployment_logs.py --no-replicas
-  ```
+```bash
+python3 audit_vertexai_deployment_logs.py --no-replicas
+```
 
 ### Command-Line Arguments
 
-Argument            | Type      | Description
-:------------------ | :-------- | :------------------------------------------------------------------------------------------------
-`--search-term`     | `str`     | **Required** (unless `--no-replicas` is used). The search term to filter replica creation events.
-`--no-replicas`     | `boolean` | Excludes replica-level download events from the report for a high-level summary.
-`--include-message` | `boolean` | Includes the detailed message column for replica events.
+| Argument            | Type      | Description                                                                                       |
+| :------------------ | :-------- | :------------------------------------------------------------------------------------------------ |
+| `--search-term`     | `str`     | **Required** (unless `--no-replicas` is used). The search term to filter replica creation events. |
+| `--no-replicas`     | `boolean` | Excludes replica-level download events from the report for a high-level summary.                  |
+| `--include-message` | `boolean` | Includes the detailed message column for replica events.                                          |
 
 ### Example Output
 
