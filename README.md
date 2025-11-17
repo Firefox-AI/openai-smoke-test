@@ -226,7 +226,7 @@ Below is a comparison of how to set up virtual users and authentication for **Fx
 | To simulate production traffic, create multiple parallel users with valid tokens.         | To simulate production traffic, create multiple parallel users with valid AppAttest tokens. |
 | Generate test users using the script in `src/stress/mlpa/fxa/generate_test_fxa_users.py`: | Generate AppAttest test users using your AppAttest provisioning script or tool.             |
 |                                                                                           |                                                                                             |
-| `make generate-fxa-users n-users=5 env=prod `                                             | `make generate-appattest-users n-users=5 env=prod`                                          |
+| `make generate-fxa-users n-users=5 env=prod `                                             | `make generate-appattest-users n-users=5`                                                   |
 | Run once to create users.                                                                 | Run once to create users.                                                                   |
 |                                                                                           |                                                                                             |
 | Refresh tokens before running the load test, as they expire frequently:                   |                                                                                             |
