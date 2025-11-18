@@ -10,3 +10,6 @@ uv.lock
 .venv
 .ruff_cache
 users.json
+**/*.csv
+**/*.png
+/out

@@ -13,7 +13,8 @@ app = typer.Typer(add_completion=False)
 
 PASSWORD = "123dev123dev123dev"
 CLIENT_ID = "5882386c6d801776"
-USERS_FILE = Path("users.json")
+USERS_FILE = Path(__file__).parent.resolve() / "users.json"
+
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s | %(levelname)s | %(message)s"
