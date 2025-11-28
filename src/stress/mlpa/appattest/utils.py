@@ -272,6 +272,7 @@ def submit_attestation(
     headers = {
         "authorization": f"Bearer {jwt_token}",
         "use-qa-certificates": "true",
+        "service-type": "ai",
     }
     return client.post(
         url,
