@@ -30,8 +30,13 @@ generate-fxa-users:
 	$(VENV)/bin/python src/stress/mlpa/fxa/generate_test_fxa_users.py create-tokens --n-users $(n-users) --env $(env)
 
 # usage example: make refresh-fxa-users
+# usage example: make refresh-fxa-users filename=users_prod.json
 refresh-fxa-users:
-	$(VENV)/bin/python src/stress/mlpa/fxa/generate_test_fxa_users.py refresh-tokens
+	@if [ -z "$(filename)" ]; then \
+		$(VENV)/bin/python src/stress/mlpa/fxa/generate_test_fxa_users.py refresh-tokens; \
+	else \
+		$(VENV)/bin/python src/stress/mlpa/fxa/generate_test_fxa_users.py refresh-tokens --filename $(filename); \
+	fi
 
 # usage example: make delete-fxa-users
 delete-fxa-users:
