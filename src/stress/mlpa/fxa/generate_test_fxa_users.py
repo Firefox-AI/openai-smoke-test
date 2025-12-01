@@ -96,20 +96,26 @@ def create_tokens(
 
 
 @app.command("refresh-tokens")
-def refresh_tokens():
-    if not USERS_FILE.exists():
-        logging.error("users.json not found")
+def refresh_tokens(
+    filename: str = typer.Option(
+        "users.json", "--filename", "-f", help="Name of the users JSON file"
+    ),
+):
+    users_file = Path(__file__).parent.resolve() / filename
+
+    if not users_file.exists():
+        logging.error(f"{filename} not found")
         raise typer.Exit(1)
 
-    users = json.loads(USERS_FILE.read_text())
+    users = json.loads(users_file.read_text())
 
     if not users:
-        logging.error("users.json is empty")
+        logging.error(f"{filename} is empty")
         raise typer.Exit(1)
 
     env = users[0].get("env")
     if env not in {"prod", "stage"}:
-        logging.error("invalid or missing env in users.json")
+        logging.error(f"invalid or missing env in {filename}")
         raise typer.Exit(1)
 
     fxa_base, oauth_base = get_env_urls(env)
@@ -137,7 +143,7 @@ def refresh_tokens():
                 pass
             progress.advance(task)
 
-    save_json(USERS_FILE, users)
+    save_json(users_file, users)
     logging.info(f"Refreshed {len(users)} tokens for env={env}")
 
 
