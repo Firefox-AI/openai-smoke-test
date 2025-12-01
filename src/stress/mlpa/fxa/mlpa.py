@@ -65,24 +65,10 @@ class MLPAUser(HttpUser):
             "service-type": "ai",
         }
 
-        endpoint = "/v1/chat/completions"
+        endpoint = "/v1/chat/completions" if mock_response else "/mock/chat/completions"
         return self.client.post(
             endpoint, json=payload, headers=headers, catch_response=True
         )
-
-    def _handle_response(self, response, request_type: str):
-        if response.status_code == 200:
-            response.success()
-        elif response.status_code == 401:
-            response.failure("Authentication failed - check FxA token")
-        elif response.status_code == 403:
-            response.failure("User blocked")
-        elif response.status_code == 400:
-            response.failure("Bad request")
-        else:
-            response.failure(
-                f"{request_type} failed with status: {response.status_code}"
-            )
 
     @task(4)
     def chat_completion(self):
