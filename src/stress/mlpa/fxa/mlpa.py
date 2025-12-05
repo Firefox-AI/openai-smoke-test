@@ -9,7 +9,7 @@ from datasets import load_dataset
 
 WAIT_TIME_MIN = 0.01
 WAIT_TIME_MAX = 0.02
-DEFAULT_MODEL = "openai/gpt-4o"
+DEFAULT_MODEL = "qwen3-235b-a22b-instruct-2507-maas"
 
 dataset = load_dataset("Mozilla/chat-eval", split="train")
 TEST_CONVERSATIONS = []
@@ -48,50 +48,46 @@ class MLPAUser(HttpUser):
         user_data = next(USER_CYCLE)
         self.fxa_token = user_data.get("token")
 
-    def _make_chat_request(self, messages, stream: bool = False):
+    def _make_chat_request(
+        self, messages, stream: bool = False, mock_response: bool = False
+    ):
         payload = {
             "messages": messages,
             "model": DEFAULT_MODEL,
             "stream": stream,
         }
+        if mock_response:
+            payload["mock_response"] = str(messages)
 
         headers = {
             "Content-Type": "application/json",
-            "x-fxa-authorization": f"Bearer {self.fxa_token}",
+            "authorization": f"Bearer {self.fxa_token}",
+            "service-type": "ai",
         }
 
-        endpoint = "/mock/chat/completions"
+        endpoint = "/v1/chat/completions" if mock_response else "/mock/chat/completions"
         return self.client.post(
             endpoint, json=payload, headers=headers, catch_response=True
         )
 
-    def _handle_response(self, response, request_type: str):
-        if response.status_code == 200:
-            response.success()
-        elif response.status_code == 401:
-            response.failure("Authentication failed - check FxA token")
-        elif response.status_code == 403:
-            response.failure("User blocked")
-        elif response.status_code == 400:
-            response.failure("Bad request")
-        else:
-            response.failure(
-                f"{request_type} failed with status: {response.status_code}"
-            )
-
-    @task(3)
+    @task(4)
     def chat_completion(self):
         messages = random.choice(TEST_CONVERSATIONS)
         with self._make_chat_request(messages, stream=False) as response:
             self._handle_response(response, "Chat Completion")
 
-    @task(2)
+    @task(3)
     def chat_completion_streaming(self):
         messages = random.choice(TEST_CONVERSATIONS)
         with self._make_chat_request(messages, stream=True) as response:
             self._handle_response(response, "Streaming")
 
-    @task(1)
+    @task(2)
     def health_check(self):
         with self.client.get("/health/liveness", catch_response=True) as response:
+            self._handle_response(response, "Health Check")
+
+    @task(1)
+    def health_check(self):
+        with self.client.get("/health/readiness", catch_response=True) as response:
             self._handle_response(response, "Health Check")
