@@ -39,8 +39,13 @@ refresh-fxa-users:
 	fi
 
 # usage example: make delete-fxa-users
+# usage example: make delete-fxa-users filename=users_prod.json
 delete-fxa-users:
-	$(VENV)/bin/python src/stress/mlpa/fxa/generate_test_fxa_users.py delete-users
+	@if [ -z "$(filename)" ]; then \
+		$(VENV)/bin/python src/stress/mlpa/fxa/generate_test_fxa_users.py delete-users; \
+	else \
+		$(VENV)/bin/python src/stress/mlpa/fxa/generate_test_fxa_users.py delete-users --filename $(filename); \
+	fi
 
 # usage example: make stress-mlpa-appattest host="http://0.0.0.0:8080" run-time=1m
 stress-mlpa-appattest:
