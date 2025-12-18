@@ -148,20 +148,26 @@ def refresh_tokens(
 
 
 @app.command("delete-users")
-def users_cleanup():
-    if not USERS_FILE.exists():
-        logging.error("users.json not found")
+def users_cleanup(
+    filename: str = typer.Option(
+        "users.json", "--filename", "-f", help="Name of the users JSON file"
+    ),
+):
+    users_file = Path(__file__).parent.resolve() / filename
+
+    if not users_file.exists():
+        logging.error(f"{filename} not found")
         raise typer.Exit(1)
 
-    users = json.loads(USERS_FILE.read_text())
+    users = json.loads(users_file.read_text())
 
     if not users:
-        logging.error("users.json is empty")
+        logging.error(f"{filename} is empty")
         raise typer.Exit(1)
 
     env = users[0].get("env")
     if env not in {"prod", "stage"}:
-        logging.error("invalid or missing env in users.json")
+        logging.error(f"invalid or missing env in {filename}")
         raise typer.Exit(1)
 
     fxa_base, _ = get_env_urls(env)
@@ -185,8 +191,8 @@ def users_cleanup():
                 pass
             progress.advance(task)
 
-    USERS_FILE.unlink(missing_ok=True)
-    logging.info(f"Deleted {removed} users from FxA and removed users.json")
+    users_file.unlink(missing_ok=True)
+    logging.info(f"Deleted {removed} users from FxA and removed {filename}")
 
 
 if __name__ == "__main__":
