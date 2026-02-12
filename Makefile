@@ -55,5 +55,9 @@ stress-mlpa-appattest:
 generate-appattest-users:
 	$(VENV)/bin/python src/stress/mlpa/appattest/generate_test_appattest_users.py --n-users $(n-users)
 
+# usage example: make stress-litellm host="https://<host>" run-time=1m
+stress-litellm:
+	$(VENV)/bin/locust -f src/stress/litellm/litellm.py --host=$(host) --run-time=$(run-time)
+
 clean:
 	rm -rf __pycache__ .cache $(VENV)
